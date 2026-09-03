@@ -1,0 +1,8 @@
+{
+  "build": {
+    "internal": {
+      "distribution": "store",
+      "android": { "buildType": "app-bundle" }
+    }
+  }
+}
