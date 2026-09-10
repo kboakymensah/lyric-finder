@@ -11,8 +11,16 @@ type SongResultsProps = {
 };
 
 export function SongResults({ songs, hasSearched, isPlayingId, onTogglePreview }: SongResultsProps) {
-  if (!hasSearched || songs.length === 0) {
+  if (!hasSearched) {
     return null;
+  }
+
+  if (songs.length === 0) {
+    return (
+      <View style={styles.emptyState}>
+        <Text style={styles.emptyTitle}>No close lyric matches yet. Try another line from the chorus.</Text>
+      </View>
+    );
   }
 
   const [bestMatch, ...alternatives] = songs;
@@ -53,8 +61,20 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 12,
   },
+  emptyState: {
+    backgroundColor: '#181714',
+    borderColor: '#3B372C',
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 18,
+  },
+  emptyTitle: {
+    color: '#BDB6A4',
+    fontSize: 16,
+    lineHeight: 24,
+  },
   heading: {
-    color: '#d3d9ef',
+    color: '#BDB6A4',
     fontSize: 14,
     fontWeight: '800',
     letterSpacing: 0.6,

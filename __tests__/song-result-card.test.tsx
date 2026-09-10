@@ -60,6 +60,18 @@ describe('SongResultCard', () => {
 });
 
 describe('SongResults', () => {
+  it('shows no-results guidance after a search returns an empty list', () => {
+    let results: ReturnType<typeof create>;
+    act(() => {
+      results = create(
+        <SongResults songs={[]} hasSearched isPlayingId={null} onTogglePreview={vi.fn()} />,
+      );
+    });
+
+    const text = results!.root.findAll((node) => String(node.type) === 'Text').map((node) => node.children.join(''));
+    expect(text).toContain('No close lyric matches yet. Try another line from the chorus.');
+  });
+
   it('groups the best match separately and omits alternatives heading when there are none', () => {
     let results: ReturnType<typeof create>;
     act(() => {

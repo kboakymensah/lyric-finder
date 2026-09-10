@@ -1,23 +1,107 @@
 import { useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { validateLyrics } from '../../lib/validation';
 import { fetchWithTimeout } from '../../lib/request';
-
-type Song = { id: string; title: string; artist: string; lyricSnippet?: string; listenUrl?: string };
+import { SongResults } from '../components/song-results';
+import type { SongResult } from '../types/song';
 
 export default function Home() {
   const [lyrics, setLyrics] = useState('');
-  const [songs, setSongs] = useState<Song[]>([]);
+  const [songs, setSongs] = useState<SongResult[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isPlayingId, setIsPlayingId] = useState<string | null>(null);
+
   async function search() {
     const error = validateLyrics(lyrics);
     if (error) return setMessage(error);
     const base = process.env.EXPO_PUBLIC_API_BASE_URL;
     if (!base || base.includes('example.workers.dev')) return setMessage('Add your live-search API URL to .env first.');
-    setLoading(true); setMessage(null); setSongs([]);
-    try { const response = await fetchWithTimeout(`${base}/search`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ lyrics }) }); const body = await response.json(); if (!response.ok) throw new Error(body.error ?? 'Search is temporarily unavailable.'); setSongs(body.results); } catch (e) { setMessage(e instanceof Error ? e.message : 'Search is temporarily unavailable.'); } finally { setLoading(false); }
+
+    setLoading(true);
+    setMessage(null);
+    setSongs([]);
+    setHasSearched(false);
+    setIsPlayingId(null);
+
+    try {
+      const response = await fetchWithTimeout(`${base}/search`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ lyrics }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? 'Search is temporarily unavailable.');
+      setSongs(body.results);
+      setHasSearched(true);
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : 'Search is temporarily unavailable.');
+    } finally {
+      setLoading(false);
+    }
   }
-  return <SafeAreaView style={s.screen}><ScrollView contentContainerStyle={s.content}><Text style={s.kicker}>LYRIC FINDER</Text><Text style={s.title}>What lyrics do you remember?</Text><Text style={s.subtitle}>A line, a phrase, even a half-remembered chorus.</Text><TextInput accessibilityLabel="Lyrics" multiline value={lyrics} onChangeText={setLyrics} placeholder="Type a line or two you remember…" placeholderTextColor="#8790aa" style={s.input}/>{message && <Text style={s.error}>{message}</Text>}<Pressable style={s.button} onPress={search} disabled={loading}>{loading ? <ActivityIndicator/> : <Text style={s.buttonText}>Find my song</Text>}</Pressable>{songs.map(song => <View key={song.id} style={s.card}><View style={s.art}><Text>♫</Text></View><View style={{flex:1}}><Text style={s.song}>{song.title}</Text><Text style={s.artist}>{song.artist}</Text>{song.lyricSnippet && <Text style={s.snippet}>“{song.lyricSnippet}”</Text>}</View>{song.listenUrl && <Pressable onPress={() => Linking.openURL(song.listenUrl!)}><Text style={s.listen}>Listen</Text></Pressable>}</View>)}</ScrollView></SafeAreaView>;
+
+  function togglePreview(song: SongResult) {
+    setIsPlayingId((currentId) => currentId === song.id ? null : song.id);
+  }
+
+  return (
+    <SafeAreaView style={s.screen}>
+      <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
+        <View style={s.hero}>
+          <Text style={s.motif}>♪  ✎  ♫</Text>
+          <Text style={s.kicker}>LYRIC FINDER</Text>
+          <Text style={s.title}>What lyrics do you remember?</Text>
+          <Text style={s.subtitle}>A line, a phrase, even a half-remembered chorus.</Text>
+        </View>
+
+        <TextInput
+          accessibilityLabel="Lyrics"
+          multiline
+          onChangeText={setLyrics}
+          placeholder="Type a line or two you remember…"
+          placeholderTextColor="#BDB6A4"
+          style={s.input}
+          value={lyrics}
+        />
+        {message && <Text style={s.error}>{message}</Text>}
+        <Pressable accessibilityRole="button" disabled={loading} onPress={search} style={[s.button, loading && s.buttonDisabled]}>
+          {loading ? <ActivityIndicator color="#0B0B0A" /> : <Text style={s.buttonText}>Find my song</Text>}
+        </Pressable>
+
+        <SongResults
+          songs={songs}
+          hasSearched={hasSearched}
+          isPlayingId={isPlayingId}
+          onTogglePreview={togglePreview}
+        />
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
-const s=StyleSheet.create({screen:{flex:1,backgroundColor:'#0d1020'},content:{padding:24,gap:16},kicker:{color:'#a9f53f',fontWeight:'800',letterSpacing:2,marginTop:20},title:{color:'white',fontSize:36,fontWeight:'800'},subtitle:{color:'#b2bad2',fontSize:16},input:{minHeight:150,color:'white',backgroundColor:'#1a1e33',borderRadius:18,padding:18,textAlignVertical:'top',fontSize:17},button:{backgroundColor:'#a9f53f',padding:18,borderRadius:16,alignItems:'center'},buttonText:{fontWeight:'800',fontSize:17},error:{color:'#ff9ea3'},card:{flexDirection:'row',gap:12,alignItems:'center',padding:14,borderRadius:16,backgroundColor:'#171b2e'},art:{width:50,height:50,borderRadius:10,backgroundColor:'#a9f53f',alignItems:'center',justifyContent:'center'},song:{color:'white',fontWeight:'700'},artist:{color:'#b2bad2'},snippet:{color:'#d3d9ef',fontSize:12},listen:{color:'#a9f53f',fontWeight:'800'}});
+
+const s = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: '#0B0B0A' },
+  content: { padding: 24, paddingBottom: 48, gap: 16 },
+  hero: { gap: 8, marginTop: 20 },
+  motif: { color: '#F7C948', fontSize: 22, letterSpacing: 5 },
+  kicker: { color: '#F7C948', fontWeight: '800', letterSpacing: 2 },
+  title: { color: '#FFF7DF', fontSize: 36, fontWeight: '800', lineHeight: 42 },
+  subtitle: { color: '#BDB6A4', fontSize: 16, lineHeight: 24 },
+  input: {
+    minHeight: 150,
+    color: '#FFF7DF',
+    backgroundColor: '#181714',
+    borderColor: '#3B372C',
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 18,
+    textAlignVertical: 'top',
+    fontSize: 17,
+  },
+  button: { alignItems: 'center', backgroundColor: '#F7C948', borderRadius: 16, padding: 18 },
+  buttonDisabled: { opacity: 0.65 },
+  buttonText: { color: '#0B0B0A', fontWeight: '800', fontSize: 17 },
+  error: { color: '#FFAAA8' },
+});
