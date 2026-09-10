@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Tex
 import { validateLyrics } from '../../lib/validation';
 import { fetchWithTimeout } from '../../lib/request';
 import { SongResults } from '../components/song-results';
+import { usePreviewPlayer } from '../hooks/use-preview-player';
 import type { SongResult } from '../types/song';
 
 export default function Home() {
@@ -11,7 +12,7 @@ export default function Home() {
   const [hasSearched, setHasSearched] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [isPlayingId, setIsPlayingId] = useState<string | null>(null);
+  const { playingId, togglePreview } = usePreviewPlayer();
 
   async function search() {
     const error = validateLyrics(lyrics);
@@ -23,7 +24,6 @@ export default function Home() {
     setMessage(null);
     setSongs([]);
     setHasSearched(false);
-    setIsPlayingId(null);
 
     try {
       const response = await fetchWithTimeout(`${base}/search`, {
@@ -40,10 +40,6 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }
-
-  function togglePreview(song: SongResult) {
-    setIsPlayingId((currentId) => currentId === song.id ? null : song.id);
   }
 
   return (
@@ -73,7 +69,7 @@ export default function Home() {
         <SongResults
           songs={songs}
           hasSearched={hasSearched}
-          isPlayingId={isPlayingId}
+          isPlayingId={playingId}
           onTogglePreview={togglePreview}
         />
       </ScrollView>

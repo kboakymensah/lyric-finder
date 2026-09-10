@@ -57,6 +57,17 @@ describe('SongResultCard', () => {
 
     expect(card!.root.findAllByProps({ accessibilityLabel: 'Preview Hello' })).toHaveLength(0);
   });
+
+  it('changes the available preview action from Preview to Pause while playing', () => {
+    let card: ReturnType<typeof create>;
+    act(() => {
+      card = create(
+        <SongResultCard song={song} emphasis="best" isPlaying onTogglePreview={vi.fn()} />,
+      );
+    });
+
+    expect(card!.root.findAllByProps({ accessibilityLabel: 'Pause Hello' })).toHaveLength(1);
+  });
 });
 
 describe('SongResults', () => {
