@@ -11,6 +11,14 @@ describe('lyric query helpers', () => {
     expect(normalizeLyricQuery('hello from the other side')).toEqual(['hello from the other side']);
   });
 
+  it('adds contraction-normalized and short-phrase fallbacks for long lyric searches', () => {
+    expect(normalizeLyricQuery('hello from the other side I must have called a thousand times')).toEqual([
+      'hello from the other side I must have called a thousand times',
+      "hello from the other side I must've called a thousand times",
+      'hello from the other side',
+    ]);
+  });
+
   it('scores normalized lyric-token overlap from zero to one hundred', () => {
     expect(scoreLyricMatch('Hello, from the other side', 'hello from the other side')).toBe(100);
     expect(scoreLyricMatch('hello from the other side', 'hello from nowhere')).toBe(40);

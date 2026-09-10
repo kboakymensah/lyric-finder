@@ -6,7 +6,12 @@ type CatalogTrack = { trackId: number; trackName: string; artistName: string; ar
 export function normalizeLyricQuery(query: string): string[] {
   const trimmed = query.trim();
   const normalized = trimmed.replace(/\s+/g, ' ');
-  return normalized === trimmed ? [trimmed] : [trimmed, normalized];
+  const variants = new Set([trimmed, normalized]);
+  const contractionNormalized = normalized.replace(/\b(must|should|would|could|might) have\b/gi, "$1've");
+  variants.add(contractionNormalized);
+  const words = normalized.split(' ').filter(Boolean);
+  if (words.length > 5) variants.add(words.slice(0, 5).join(' '));
+  return [...variants];
 }
 
 function lyricTokens(value?: string | null): string[] {
