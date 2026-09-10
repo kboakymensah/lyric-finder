@@ -38,6 +38,9 @@ worker/.dev.vars
 # typescript
 *.tsbuildinfo
 
+# Local feature workspaces
+.worktrees/
+
 example
 
 # generated native folders
