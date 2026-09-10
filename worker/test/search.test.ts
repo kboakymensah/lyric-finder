@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { normalizeLyricQuery, scoreLyricMatch, searchSongs } from '../src/search';
+import { type Fetcher, normalizeLyricQuery, scoreLyricMatch, searchSongs } from '../src/search';
 
 describe('lyric query helpers', () => {
   it('keeps the trimmed query and adds only a distinct whitespace-normalized variant', () => {
@@ -27,6 +27,44 @@ describe('lyric query helpers', () => {
 });
 
 describe('searchSongs', () => {
+  it('uses a Genius lyric hit and enriches it with an iTunes preview', async () => {
+    const fetcher: Fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(input instanceof Request ? input.url : String(input));
+      if (url.hostname === 'api.genius.com') return new Response(JSON.stringify({ response: { hits: [{ result: {
+        id: 987,
+        title: 'Hello',
+        primary_artist: { name: 'Adele' },
+        song_art_image_url: 'https://genius.example/hello.jpg',
+        url: 'https://genius.com/Adele-hello-lyrics',
+      } }] } }));
+      if (url.hostname === 'itunes.apple.com') return new Response(JSON.stringify({ results: [{
+        trackId: 2, trackName: 'Hello', artistName: 'Adele', artworkUrl100: 'https://itunes.example/cover.jpg', previewUrl: 'https://itunes.example/preview', trackViewUrl: 'https://itunes.example/track',
+      }] }));
+      throw new Error(`Unexpected request to ${url.hostname}`);
+    });
+
+    await expect(searchSongs('hello from the other side', fetcher, { geniusAccessToken: 'test-token' })).resolves.toEqual([
+      expect.objectContaining({
+        id: '987', title: 'Hello', artist: 'Adele', artworkUrl: 'https://genius.example/hello.jpg',
+        previewUrl: 'https://itunes.example/preview', listenUrl: 'https://itunes.example/track', matchScore: 100,
+      }),
+    ]);
+  });
+
+  it('falls back to LRCLIB when Genius has no lyric hits', async () => {
+    const fetcher: Fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(input instanceof Request ? input.url : String(input));
+      if (url.hostname === 'api.genius.com') return new Response(JSON.stringify({ response: { hits: [] } }));
+      if (url.hostname === 'lrclib.net') return new Response(JSON.stringify([{ id: 3, trackName: 'Hello', artistName: 'Adele', plainLyrics: 'hello from the other side' }]));
+      if (url.hostname === 'itunes.apple.com') return new Response(JSON.stringify({ results: [] }));
+      throw new Error(`Unexpected request to ${url.hostname}`);
+    });
+
+    await expect(searchSongs('hello from the other side', fetcher, { geniusAccessToken: 'test-token' })).resolves.toEqual([
+      expect.objectContaining({ id: '3', title: 'Hello', artist: 'Adele', matchScore: 100 }),
+    ]);
+  });
+
   it('ranks Adele\'s Hello above an unrelated lyric candidate by overlap', async () => {
     const fetcher = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify([
