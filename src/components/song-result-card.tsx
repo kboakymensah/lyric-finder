@@ -48,14 +48,16 @@ export function SongResultCard({ song, emphasis, isPlaying, onTogglePreview }: S
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#171b2e',
+    backgroundColor: '#181714',
+    borderColor: '#3B372C',
+    borderWidth: 1,
     borderRadius: 16,
     flexDirection: 'row',
     gap: 12,
     padding: 14,
   },
   bestCard: {
-    borderColor: '#a9f53f',
+    borderColor: '#F7C948',
     borderWidth: 1,
   },
   artwork: {
@@ -65,14 +67,14 @@ const styles = StyleSheet.create({
   },
   artworkFallback: {
     alignItems: 'center',
-    backgroundColor: '#a9f53f',
+    backgroundColor: '#F7C948',
     borderRadius: 10,
     height: 56,
     justifyContent: 'center',
     width: 56,
   },
   note: {
-    color: '#0d1020',
+    color: '#0B0B0A',
     fontSize: 26,
     fontWeight: '800',
   },
@@ -81,15 +83,15 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   title: {
-    color: '#ffffff',
+    color: '#FFF7DF',
     fontSize: 17,
     fontWeight: '800',
   },
   artist: {
-    color: '#b2bad2',
+    color: '#BDB6A4',
   },
   snippet: {
-    color: '#d3d9ef',
+    color: '#D8CFB6',
     fontSize: 12,
     marginTop: 4,
   },
@@ -99,11 +101,11 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   preview: {
-    color: '#ffffff',
+    color: '#FFF7DF',
     fontWeight: '700',
   },
   listen: {
-    color: '#a9f53f',
+    color: '#F7C948',
     fontWeight: '800',
   },
 });
