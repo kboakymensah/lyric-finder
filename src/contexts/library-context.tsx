@@ -39,6 +39,8 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<LibraryStatus>('loading');
   const [error, setError] = useState<string | null>(null);
   const dataRef = useRef(data);
+  const isHydratingRef = useRef(true);
+  const pendingMutationsRef = useRef<Array<(library: LibraryData) => LibraryData>>([]);
 
   const persist = useCallback((nextData: LibraryData) => {
     void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(nextData))
@@ -54,29 +56,44 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
         if (!active) return;
 
         const loadedData = storedData ? parseLibrary(storedData) : parseLibrary('');
-        dataRef.current = loadedData;
-        setData(loadedData);
+        const rebasedData = pendingMutationsRef.current.reduce(
+          (library, mutation) => mutation(library),
+          loadedData,
+        );
+        const hadPendingMutations = pendingMutationsRef.current.length > 0;
+        pendingMutationsRef.current = [];
+        dataRef.current = rebasedData;
+        setData(rebasedData);
         setError(null);
+        if (hadPendingMutations) persist(rebasedData);
       })
       .catch(() => {
         if (!active) return;
 
-        const initialData = parseLibrary('');
+        const initialData = pendingMutationsRef.current.reduce(
+          (library, mutation) => mutation(library),
+          parseLibrary(''),
+        );
+        pendingMutationsRef.current = [];
         dataRef.current = initialData;
         setData(initialData);
         setError(LOAD_ERROR);
       })
       .finally(() => {
-        if (active) setStatus('ready');
+        if (active) {
+          isHydratingRef.current = false;
+          setStatus('ready');
+        }
       });
 
     return () => {
       active = false;
     };
-  }, []);
+  }, [persist]);
 
   const update = useCallback(
     (operation: (library: LibraryData) => LibraryData) => {
+      if (isHydratingRef.current) pendingMutationsRef.current.push(operation);
       const nextData = operation(dataRef.current);
       dataRef.current = nextData;
       setData(nextData);

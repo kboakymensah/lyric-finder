@@ -109,6 +109,56 @@ describe('LibraryProvider', () => {
     );
   });
 
+  it('keeps a mutation made while storage hydration is pending', async () => {
+    let resolveRead!: (value: string | null) => void;
+    storage.getItem.mockReturnValue(
+      new Promise<string | null>((resolve) => {
+        resolveRead = resolve;
+      }),
+    );
+    storage.setItem.mockResolvedValue(undefined);
+
+    let library: ReturnType<typeof useLibrary> | undefined;
+    const Consumer = () => {
+      library = useLibrary();
+      return null;
+    };
+
+    act(() => {
+      create(
+        <LibraryProvider>
+          <Consumer />
+        </LibraryProvider>,
+      );
+    });
+
+    act(() => library!.toggleSong(song));
+    expect(library!.isLiked(song.id)).toBe(true);
+
+    await act(async () => {
+      resolveRead(
+        JSON.stringify({
+          likedSongs: [
+            {
+              id: 'stored-song',
+              title: 'Stored song',
+              artist: 'Stored artist',
+              artworkUrl: null,
+              lyricsUrl: null,
+              previewUrl: null,
+              listenUrl: 'https://example.test/stored',
+            },
+          ],
+          playlists: [],
+        }),
+      );
+    });
+
+    expect(library!.status).toBe('ready');
+    expect(library!.isLiked(song.id)).toBe(true);
+    expect(library!.isLiked('stored-song')).toBe(true);
+  });
+
   it('reports a readable error and keeps an empty library when loading fails', async () => {
     storage.getItem.mockRejectedValue(new Error('device unavailable'));
 
