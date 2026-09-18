@@ -37,6 +37,18 @@ describe('local library operations', () => {
     expect(createPlaylist(next, '   ').playlists).toHaveLength(1);
   });
 
+  it('does not share existing playlist song IDs with a created-library result', () => {
+    const input = {
+      likedSongs: [],
+      playlists: [{ id: 'existing', name: 'Existing', songIds: ['song-1'] }],
+    };
+
+    const result = createPlaylist(input, 'New Playlist');
+    result.playlists[0].songIds.push('song-2');
+
+    expect(input.playlists[0].songIds).toEqual(['song-1']);
+  });
+
   it('adds a liked song once, removes it, deletes a playlist, and rejects corrupt JSON', () => {
     const liked = toggleLikedSong(emptyLibrary, song);
     const withPlaylist = createPlaylist(liked, 'Road Trip');

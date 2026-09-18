@@ -83,18 +83,19 @@ export const toggleLikedSong = (library: LibraryData, song: SavedSong): LibraryD
 
 export const createPlaylist = (library: LibraryData, name: string): LibraryData => {
   const trimmedName = name.trim();
+  const nextLibrary = copyLibrary(library);
   const hasDuplicate = library.playlists.some(
     (playlist) => playlist.name.toLocaleLowerCase() === trimmedName.toLocaleLowerCase(),
   );
 
   if (!trimmedName || hasDuplicate) {
-    return copyLibrary(library);
+    return nextLibrary;
   }
 
   return {
-    ...copyLibrary(library),
+    ...nextLibrary,
     playlists: [
-      ...library.playlists,
+      ...nextLibrary.playlists,
       { id: `playlist-${Date.now()}-${Math.random().toString(36).slice(2)}`, name: trimmedName, songIds: [] },
     ],
   };
