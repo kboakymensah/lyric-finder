@@ -37,33 +37,38 @@ describe('local library operations', () => {
     expect(createPlaylist(next, '   ').playlists).toHaveLength(1);
   });
 
-  it('does not share existing playlist song IDs with a created-library result', () => {
+  it('does not share existing playlist songs with a created-library result', () => {
     const input = {
       likedSongs: [],
-      playlists: [{ id: 'existing', name: 'Existing', songIds: ['song-1'] }],
+      playlists: [{ id: 'existing', name: 'Existing', songs: [song] }],
     };
 
     const result = createPlaylist(input, 'New Playlist');
-    result.playlists[0].songIds.push('song-2');
+    result.playlists[0].songs.push({ ...song, id: 'song-2' });
 
-    expect(input.playlists[0].songIds).toEqual(['song-1']);
+    expect(input.playlists[0].songs).toEqual([song]);
   });
 
-  it('adds a liked song once, removes it, deletes a playlist, and rejects corrupt JSON', () => {
-    const liked = toggleLikedSong(emptyLibrary, song);
-    const withPlaylist = createPlaylist(liked, 'Road Trip');
+  it('adds any song directly to a playlist once, even when it is not liked', () => {
+    const withPlaylist = createPlaylist(emptyLibrary, 'Road Trip');
     const id = withPlaylist.playlists[0].id;
-    const withSong = addSongToPlaylist(withPlaylist, id, song.id);
-    expect(withSong.playlists[0].songIds).toEqual([song.id]);
-    expect(addSongToPlaylist(withSong, id, song.id).playlists[0].songIds).toEqual([song.id]);
-    expect(removeSongFromPlaylist(withSong, id, song.id).playlists[0].songIds).toEqual([]);
+    const withSong = addSongToPlaylist(withPlaylist, id, song);
+    expect(withSong.likedSongs).toEqual([]);
+    expect(withSong.playlists[0].songs).toEqual([song]);
+    expect(addSongToPlaylist(withSong, id, song).playlists[0].songs).toEqual([song]);
+    expect(removeSongFromPlaylist(withSong, id, song.id).playlists[0].songs).toEqual([]);
+  });
+
+  it('deletes a playlist and rejects corrupt JSON', () => {
+    const withPlaylist = createPlaylist(emptyLibrary, 'Road Trip');
+    const id = withPlaylist.playlists[0].id;
     expect(deletePlaylist(withPlaylist, id).playlists).toEqual([]);
     expect(parseLibrary('{bad json}')).toEqual(emptyLibrary);
   });
 
   it('returns an empty library for invalid stored data', () => {
     expect(parseLibrary('{"likedSongs":"wrong","playlists":[]}')).toEqual(emptyLibrary);
-    expect(parseLibrary('{"likedSongs":[],"playlists":[{"id":"a","name":"Road Trip","songIds":"wrong"}]}')).toEqual(emptyLibrary);
+    expect(parseLibrary('{"likedSongs":[],"playlists":[{"id":"a","name":"Road Trip","songs":"wrong"}]}')).toEqual(emptyLibrary);
   });
 
   it('converts a search result into the persistable song shape', () => {

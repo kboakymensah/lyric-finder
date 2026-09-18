@@ -72,14 +72,14 @@ describe('SongResultCard', () => {
     expect(card!.root.findAllByProps({ accessibilityLabel: 'Preview Hello' })).toHaveLength(0);
   });
 
-  it('changes the available preview action from Preview to Pause while playing', () => {
+  it('shows three distinct result action bars and a top-right liked button', () => {
     let card: ReturnType<typeof create>;
     act(() => {
       card = create(
         <SongResultCard
           song={song}
           emphasis="best"
-          isPlaying
+          isPlaying={false}
           isSaved={false}
           onTogglePreview={vi.fn()}
           onViewLyrics={vi.fn()}
@@ -89,7 +89,36 @@ describe('SongResultCard', () => {
       );
     });
 
-    expect(card!.root.findAllByProps({ accessibilityLabel: 'Pause Hello' })).toHaveLength(1);
+    expect(card!.root.findAllByProps({ accessibilityLabel: 'View lyrics for Hello' })).toHaveLength(1);
+    expect(card!.root.findAllByProps({ accessibilityLabel: 'Play 30-second preview of Hello' })).toHaveLength(1);
+    expect(card!.root.findAllByProps({ accessibilityLabel: 'Listen to Hello in Apple Music' })).toHaveLength(1);
+    expect(card!.root.findAllByProps({ accessibilityLabel: 'Add Hello to liked songs' })).toHaveLength(1);
+  });
+
+  it('lets a result be added directly to a selected playlist', () => {
+    const onAddToPlaylist = vi.fn();
+    let card: ReturnType<typeof create>;
+    act(() => {
+      card = create(
+        <SongResultCard
+          song={song}
+          emphasis="best"
+          isPlaying={false}
+          isSaved={false}
+          onTogglePreview={vi.fn()}
+          onViewLyrics={vi.fn()}
+          onListen={vi.fn()}
+          onToggleSaved={vi.fn()}
+          playlists={[{ id: 'road-trip', name: 'Road Trip', songs: [] }]}
+          onAddToPlaylist={onAddToPlaylist}
+        />,
+      );
+    });
+
+    act(() => card!.root.findByProps({ accessibilityLabel: 'Add Hello to a playlist' }).props.onPress());
+    act(() => card!.root.findByProps({ accessibilityLabel: 'Add Hello to Road Trip' }).props.onPress());
+
+    expect(onAddToPlaylist).toHaveBeenCalledWith('road-trip', song);
   });
 
   it('invokes the visible lyric, listen, and save controls with its song', () => {
@@ -113,8 +142,8 @@ describe('SongResultCard', () => {
     });
 
     act(() => card!.root.findByProps({ accessibilityLabel: 'View lyrics for Hello' }).props.onPress());
-    act(() => card!.root.findByProps({ accessibilityLabel: 'Listen to Hello' }).props.onPress());
-    act(() => card!.root.findByProps({ accessibilityLabel: 'Save Hello' }).props.onPress());
+    act(() => card!.root.findByProps({ accessibilityLabel: 'Listen to Hello in Apple Music' }).props.onPress());
+    act(() => card!.root.findByProps({ accessibilityLabel: 'Add Hello to liked songs' }).props.onPress());
 
     expect(onViewLyrics).toHaveBeenCalledWith(song);
     expect(onListen).toHaveBeenCalledWith(song);
@@ -210,7 +239,7 @@ describe('SongResults', () => {
     });
 
     act(() => results!.root.findByProps({ accessibilityLabel: 'View lyrics for Hello' }).props.onPress());
-    act(() => results!.root.findByProps({ accessibilityLabel: 'Listen to Rolling in the Deep' }).props.onPress());
+    act(() => results!.root.findByProps({ accessibilityLabel: 'Listen to Rolling in the Deep in Apple Music' }).props.onPress());
     act(() => results!.root.findByProps({ accessibilityLabel: 'Remove Rolling in the Deep from liked songs' }).props.onPress());
 
     expect(onViewLyrics).toHaveBeenCalledWith(song);

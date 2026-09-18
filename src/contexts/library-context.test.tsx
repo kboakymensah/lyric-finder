@@ -159,7 +159,7 @@ describe('LibraryProvider', () => {
     expect(library!.isLiked('stored-song')).toBe(true);
   });
 
-  it('keeps a created playlist ID for subsequent queued playlist mutations', async () => {
+  it('keeps a created playlist ID for a queued direct-to-playlist save', async () => {
     let resolveRead!: (value: string | null) => void;
     storage.getItem.mockReturnValue(
       new Promise<string | null>((resolve) => {
@@ -182,18 +182,32 @@ describe('LibraryProvider', () => {
       );
     });
 
-    act(() => library!.toggleSong(song));
     act(() => library!.create('Road Trip'));
     const playlistId = library!.data.playlists[0].id;
-    act(() => library!.addToPlaylist(playlistId, song.id));
+    act(() => library!.addToPlaylist(playlistId, song));
 
     await act(async () => {
       resolveRead(null);
     });
 
     expect(library!.data.playlists).toEqual([
-      { id: playlistId, name: 'Road Trip', songIds: [song.id] },
+      {
+        id: playlistId,
+        name: 'Road Trip',
+        songs: [
+          {
+            id: song.id,
+            title: song.title,
+            artist: song.artist,
+            artworkUrl: song.artworkUrl,
+            lyricsUrl: song.lyricsUrl,
+            previewUrl: song.previewUrl,
+            listenUrl: song.listenUrl,
+          },
+        ],
+      },
     ]);
+    expect(library!.data.likedSongs).toEqual([]);
   });
 
   it('reports a readable error and keeps an empty library when loading fails', async () => {

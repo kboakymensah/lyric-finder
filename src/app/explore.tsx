@@ -13,11 +13,7 @@ export default function LibraryScreen() {
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const { addToPlaylist, create, data, error, removeFromPlaylist, removePlaylist, status, toggleSong } = useLibrary();
   const selectedPlaylist = data.playlists.find((playlist) => playlist.id === selectedPlaylistId) ?? null;
-  const selectedSongs = selectedPlaylist
-    ? selectedPlaylist.songIds
-        .map((songId) => data.likedSongs.find((song) => song.id === songId))
-        .filter((song): song is (typeof data.likedSongs)[number] => Boolean(song))
-    : [];
+  const selectedSongs = selectedPlaylist?.songs ?? [];
 
   function createPlaylist() {
     const name = newPlaylistName.trim();
@@ -64,18 +60,18 @@ export default function LibraryScreen() {
             <TextInput accessibilityLabel="New playlist name" onChangeText={setNewPlaylistName} placeholder="New playlist name" placeholderTextColor="#BDB6A4" style={styles.input} value={newPlaylistName} />
             <Pressable accessibilityRole="button" onPress={createPlaylist} style={styles.createButton}><Text style={styles.createText}>Create playlist</Text></Pressable>
           </View>
-          {data.playlists.length === 0 ? <Text style={styles.muted}>Create a playlist to organize your liked songs.</Text> : <View style={styles.playlistChoices}>{data.playlists.map((playlist) => (
+          {data.playlists.length === 0 ? <Text style={styles.muted}>Create a playlist to organize songs from your search results.</Text> : <View style={styles.playlistChoices}>{data.playlists.map((playlist) => (
             <Pressable key={playlist.id} accessibilityRole="button" onPress={() => setSelectedPlaylistId(playlist.id)} style={[styles.playlistChoice, selectedPlaylistId === playlist.id && styles.selectedPlaylistChoice]}>
               <Text style={[styles.playlistName, selectedPlaylistId === playlist.id && styles.selectedPlaylistName]}>{playlist.name}</Text>
-              <Text style={[styles.count, selectedPlaylistId === playlist.id && styles.selectedCount]}>{playlist.songIds.length} song{playlist.songIds.length === 1 ? '' : 's'}</Text>
+              <Text style={[styles.count, selectedPlaylistId === playlist.id && styles.selectedCount]}>{playlist.songs.length} song{playlist.songs.length === 1 ? '' : 's'}</Text>
             </Pressable>
           ))}</View>}
         </View>
 
         {selectedPlaylist && <View style={styles.section}>
           <View style={styles.selectionHeader}><Text style={styles.heading}>{selectedPlaylist.name}</Text><Pressable accessibilityRole="button" onPress={deleteSelectedPlaylist}><Text style={styles.delete}>Delete playlist</Text></Pressable></View>
-          {data.likedSongs.filter((song) => !selectedPlaylist.songIds.includes(song.id)).map((song) => (
-            <View key={song.id} style={styles.membershipRow}><Text style={styles.membershipTitle}>{song.title} · {song.artist}</Text><Pressable accessibilityRole="button" accessibilityLabel={`Add ${song.title} to ${selectedPlaylist.name}`} onPress={() => addToPlaylist(selectedPlaylist.id, song.id)}><Text style={styles.add}>Add</Text></Pressable></View>
+          {data.likedSongs.filter((song) => !selectedPlaylist.songs.some((playlistSong) => playlistSong.id === song.id)).map((song) => (
+            <View key={song.id} style={styles.membershipRow}><Text style={styles.membershipTitle}>{song.title} · {song.artist}</Text><Pressable accessibilityRole="button" accessibilityLabel={`Add ${song.title} to ${selectedPlaylist.name}`} onPress={() => addToPlaylist(selectedPlaylist.id, toToggleableSong(song))}><Text style={styles.add}>Add</Text></Pressable></View>
           ))}
           {selectedSongs.length === 0 ? <Text style={styles.muted}>No songs in this playlist yet.</Text> : selectedSongs.map((song) => (
             <View key={song.id} style={styles.membershipRow}><Text style={styles.membershipTitle}>{song.title} · {song.artist}</Text><Pressable accessibilityRole="button" accessibilityLabel={`Remove ${song.title} from ${selectedPlaylist.name}`} onPress={() => removeFromPlaylist(selectedPlaylist.id, song.id)}><Text style={styles.remove}>Remove</Text></Pressable></View>

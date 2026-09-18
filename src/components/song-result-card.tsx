@@ -1,6 +1,8 @@
 import { Image } from 'expo-image';
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import type { Playlist } from '../lib/library';
 import type { SongResult } from '../types/song';
 
 type SongResultCardProps = {
@@ -12,6 +14,8 @@ type SongResultCardProps = {
   onViewLyrics: (song: SongResult) => void;
   onListen: (song: SongResult) => void;
   onToggleSaved: (song: SongResult) => void;
+  playlists?: Playlist[];
+  onAddToPlaylist?: (playlistId: string, song: SongResult) => void;
 };
 
 export function SongResultCard({
@@ -23,8 +27,11 @@ export function SongResultCard({
   onViewLyrics,
   onListen,
   onToggleSaved,
+  playlists = [],
+  onAddToPlaylist = () => {},
 }: SongResultCardProps) {
-  const previewLabel = `${isPlaying ? 'Pause' : 'Preview'} ${song.title}`;
+  const [showPlaylistPicker, setShowPlaylistPicker] = useState(false);
+  const previewLabel = `${isPlaying ? 'Pause' : 'Play 30-second preview of'} ${song.title}`;
 
   return (
     <View style={[styles.card, emphasis === 'best' && styles.bestCard]}>
@@ -37,7 +44,16 @@ export function SongResultCard({
       )}
 
       <View style={styles.details}>
-        <Text style={styles.title}>{song.title}</Text>
+        <View style={styles.songHeader}>
+          <Text style={styles.title}>{song.title}</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={isSaved ? `Remove ${song.title} from liked songs` : `Add ${song.title} to liked songs`}
+            onPress={() => onToggleSaved(song)}
+            style={[styles.saveButton, isSaved && styles.savedButton]}>
+            <Text style={styles.saveSymbol}>{isSaved ? '✓' : '+'}</Text>
+          </Pressable>
+        </View>
         <Text style={styles.artist}>{song.artist}</Text>
         {song.lyricSnippet && <Text style={styles.snippet}>“{song.lyricSnippet}”</Text>}
 
@@ -46,24 +62,47 @@ export function SongResultCard({
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`View lyrics for ${song.title}`}
-              onPress={() => onViewLyrics(song)}>
-              <Text style={styles.lyrics}>View Lyrics</Text>
+              onPress={() => onViewLyrics(song)}
+              style={[styles.actionBar, styles.lyricsBar]}>
+              <Text style={styles.actionText}>View Lyrics</Text>
             </Pressable>
           )}
           {song.previewUrl && (
-            <Pressable accessibilityRole="button" accessibilityLabel={previewLabel} onPress={onTogglePreview}>
-              <Text style={styles.preview}>{isPlaying ? 'Pause' : 'Play Preview'}</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel={previewLabel} onPress={onTogglePreview} style={[styles.actionBar, styles.previewBar]}>
+              <Text style={styles.actionText}>{isPlaying ? 'Pause Preview' : 'Play 30-second Preview'}</Text>
             </Pressable>
           )}
-          <Pressable accessibilityRole="button" accessibilityLabel={`Listen to ${song.title}`} onPress={() => onListen(song)}>
-            <Text style={styles.listen}>Listen</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel={`Listen to ${song.title} in Apple Music`} onPress={() => onListen(song)} style={[styles.actionBar, styles.listenBar]}>
+            <Text style={[styles.actionText, styles.listenText]}>Listen in Apple Music</Text>
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={isSaved ? `Remove ${song.title} from liked songs` : `Save ${song.title}`}
-            onPress={() => onToggleSaved(song)}>
-            <Text style={styles.save}>{isSaved ? 'Remove' : 'Save'}</Text>
+            accessibilityLabel={`Add ${song.title} to a playlist`}
+            onPress={() => setShowPlaylistPicker((isOpen) => !isOpen)}
+            style={[styles.actionBar, styles.playlistBar]}>
+            <Text style={styles.actionText}>Add to Playlist</Text>
           </Pressable>
+          {showPlaylistPicker && (
+            <View style={styles.playlistPicker}>
+              {playlists.length === 0 ? (
+                <Text style={styles.pickerHint}>Create a playlist in My Library first.</Text>
+              ) : (
+                playlists.map((playlist) => (
+                  <Pressable
+                    key={playlist.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Add ${song.title} to ${playlist.name}`}
+                    onPress={() => {
+                      onAddToPlaylist(playlist.id, song);
+                      setShowPlaylistPicker(false);
+                    }}
+                    style={styles.playlistChoice}>
+                    <Text style={styles.playlistChoiceText}>{playlist.name}</Text>
+                  </Pressable>
+                ))
+              )}
+            </View>
+          )}
         </View>
       </View>
     </View>
@@ -106,6 +145,12 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  songHeader: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
   title: {
     color: '#FFF7DF',
     fontSize: 17,
@@ -120,25 +165,71 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   actions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
+    gap: 8,
     marginTop: 8,
   },
-  preview: {
+  actionBar: {
+    alignItems: 'center',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+  },
+  lyricsBar: {
+    backgroundColor: '#302B1B',
+  },
+  previewBar: {
+    backgroundColor: '#F7C948',
+  },
+  listenBar: {
+    borderColor: '#F7C948',
+    borderWidth: 1,
+  },
+  playlistBar: {
+    backgroundColor: '#25231C',
+  },
+  actionText: {
     color: '#FFF7DF',
     fontWeight: '700',
   },
-  lyrics: {
-    color: '#D8CFB6',
-    fontWeight: '700',
-  },
-  listen: {
+  listenText: {
     color: '#F7C948',
-    fontWeight: '800',
   },
-  save: {
-    color: '#FFF7DF',
+  saveButton: {
+    alignItems: 'center',
+    backgroundColor: '#F7C948',
+    borderRadius: 16,
+    height: 32,
+    justifyContent: 'center',
+    width: 32,
+  },
+  savedButton: {
+    backgroundColor: '#FFF7DF',
+  },
+  saveSymbol: {
+    color: '#0B0B0A',
     fontWeight: '800',
+    fontSize: 21,
+  },
+  playlistPicker: {
+    backgroundColor: '#0B0B0A',
+    borderColor: '#3B372C',
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 6,
+    padding: 8,
+  },
+  pickerHint: {
+    color: '#BDB6A4',
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  playlistChoice: {
+    backgroundColor: '#302B1B',
+    borderRadius: 8,
+    padding: 10,
+  },
+  playlistChoiceText: {
+    color: '#FFF7DF',
+    fontWeight: '700',
   },
 });

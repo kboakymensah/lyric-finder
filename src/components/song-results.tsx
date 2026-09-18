@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import type { Playlist } from '../lib/library';
 import { SongResultCard } from './song-result-card';
 import type { SongResult } from '../types/song';
 
@@ -12,6 +13,8 @@ type SongResultsProps = {
   onViewLyrics?: (song: SongResult) => void;
   onListen?: (song: SongResult) => void;
   onToggleSaved?: (song: SongResult) => void;
+  playlists?: Playlist[];
+  onAddToPlaylist?: (playlistId: string, song: SongResult) => void;
 };
 
 const noAction = () => {};
@@ -26,6 +29,8 @@ export function SongResults({
   onViewLyrics = noAction,
   onListen = noAction,
   onToggleSaved = noAction,
+  playlists = [],
+  onAddToPlaylist = noAction,
 }: SongResultsProps) {
   if (!hasSearched) {
     return null;
@@ -53,6 +58,8 @@ export function SongResults({
         onViewLyrics={onViewLyrics}
         onListen={onListen}
         onToggleSaved={onToggleSaved}
+        playlists={playlists}
+        onAddToPlaylist={onAddToPlaylist}
       />
 
       {alternatives.length > 0 && (
@@ -69,6 +76,8 @@ export function SongResults({
               onViewLyrics={onViewLyrics}
               onListen={onListen}
               onToggleSaved={onToggleSaved}
+              playlists={playlists}
+              onAddToPlaylist={onAddToPlaylist}
             />
           ))}
         </View>

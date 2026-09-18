@@ -15,7 +15,7 @@ export default function Home() {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { playingId, togglePreview } = usePreviewPlayer();
-  const { error: libraryError, isLiked, toggleSong } = useLibrary();
+  const { addToPlaylist, data: library, error: libraryError, isLiked, toggleSong } = useLibrary();
 
   async function openExternal(url: string | null, unavailableMessage: string) {
     if (!url) return setMessage(unavailableMessage);
@@ -91,6 +91,8 @@ export default function Home() {
           onViewLyrics={(song) => openExternal(song.lyricsUrl, 'Lyrics are unavailable for this song.')}
           onListen={(song) => openExternal(song.listenUrl, 'Listening is unavailable for this song.')}
           onToggleSaved={toggleSong}
+          playlists={library.playlists}
+          onAddToPlaylist={addToPlaylist}
         />
       </ScrollView>
     </SafeAreaView>

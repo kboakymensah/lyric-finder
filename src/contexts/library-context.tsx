@@ -28,7 +28,7 @@ type LibraryContextValue = {
   toggleSong: (song: SongResult) => void;
   create: (name: string) => void;
   removePlaylist: (playlistId: string) => void;
-  addToPlaylist: (playlistId: string, songId: string) => void;
+  addToPlaylist: (playlistId: string, song: SongResult) => void;
   removeFromPlaylist: (playlistId: string, songId: string) => void;
 };
 
@@ -137,8 +137,8 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       toggleSong: (song) => update((library) => toggleLikedSong(library, toSavedSong(song))),
       create,
       removePlaylist: (playlistId) => update((library) => deletePlaylist(library, playlistId)),
-      addToPlaylist: (playlistId, songId) =>
-        update((library) => addSongToPlaylist(library, playlistId, songId)),
+      addToPlaylist: (playlistId, song) =>
+        update((library) => addSongToPlaylist(library, playlistId, toSavedSong(song))),
       removeFromPlaylist: (playlistId, songId) =>
         update((library) => removeSongFromPlaylist(library, playlistId, songId)),
     }),
