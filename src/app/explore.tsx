@@ -1,180 +1,91 @@
 import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
-import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Link } from 'expo-router';
+import { useState } from 'react';
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { ExternalLink } from '@/components/external-link';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Collapsible } from '@/components/ui/collapsible';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { useLibrary } from '../contexts/library-context';
+import type { SavedSong } from '../types/song';
 
-export default function TabTwoScreen() {
-  const safeAreaInsets = useSafeAreaInsets();
-  const insets = {
-    ...safeAreaInsets,
-    bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
-  };
-  const theme = useTheme();
+const toToggleableSong = (song: SavedSong) => ({ ...song, lyricSnippet: null, matchScore: 0 });
 
-  const contentPlatformStyle = Platform.select({
-    android: {
-      paddingTop: insets.top,
-      paddingLeft: insets.left,
-      paddingRight: insets.right,
-      paddingBottom: insets.bottom,
-    },
-    web: {
-      paddingTop: Spacing.six,
-      paddingBottom: Spacing.four,
-    },
-  });
+export default function LibraryScreen() {
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
+  const [newPlaylistName, setNewPlaylistName] = useState('');
+  const { addToPlaylist, create, data, error, removeFromPlaylist, removePlaylist, status, toggleSong } = useLibrary();
+  const selectedPlaylist = data.playlists.find((playlist) => playlist.id === selectedPlaylistId) ?? null;
+  const selectedSongs = selectedPlaylist
+    ? selectedPlaylist.songIds
+        .map((songId) => data.likedSongs.find((song) => song.id === songId))
+        .filter((song): song is (typeof data.likedSongs)[number] => Boolean(song))
+    : [];
+
+  function createPlaylist() {
+    const name = newPlaylistName.trim();
+    if (!name || data.playlists.some((playlist) => playlist.name.toLowerCase() === name.toLowerCase())) return;
+    create(name);
+    setNewPlaylistName('');
+  }
+
+  function deleteSelectedPlaylist() {
+    if (!selectedPlaylist) return;
+    removePlaylist(selectedPlaylist.id);
+    setSelectedPlaylistId(null);
+  }
 
   return (
-    <ScrollView
-      style={[styles.scrollView, { backgroundColor: theme.background }]}
-      contentInset={insets}
-      contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}>
-      <ThemedView style={styles.container}>
-        <ThemedView style={styles.titleContainer}>
-          <ThemedText type="subtitle">Explore</ThemedText>
-          <ThemedText style={styles.centerText} themeColor="textSecondary">
-            This starter app includes example{'\n'}code to help you get started.
-          </ThemedText>
+    <SafeAreaView style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <Link href="/" style={styles.backLink}>← Back to search</Link>
+        <View style={styles.hero}>
+          <Text style={styles.kicker}>YOUR COLLECTION</Text>
+          <Text style={styles.title}>My Library</Text>
+          <Text style={styles.subtitle}>Save songs you love and arrange them into playlists.</Text>
+        </View>
+        {error && <Text style={styles.error}>{error}</Text>}
 
-          <ExternalLink href="https://docs.expo.dev" asChild>
-            <Pressable style={({ pressed }) => pressed && styles.pressed}>
-              <ThemedView type="backgroundElement" style={styles.linkButton}>
-                <ThemedText type="link">Expo documentation</ThemedText>
-                <SymbolView
-                  tintColor={theme.text}
-                  name={{ ios: 'arrow.up.right.square', android: 'link', web: 'link' }}
-                  size={12}
-                />
-              </ThemedView>
+        <View style={styles.section}>
+          <Text style={styles.heading}>Liked songs</Text>
+          {status === 'loading' ? <Text style={styles.muted}>Loading your library…</Text> : data.likedSongs.length === 0 ? (
+            <Text style={styles.empty}>Save a song from your search results to start your library.</Text>
+          ) : data.likedSongs.map((song) => (
+            <View key={song.id} style={styles.songCard}>
+              {song.artworkUrl ? <Image source={{ uri: song.artworkUrl }} style={styles.artwork} /> : <View style={styles.artworkFallback}><Text style={styles.note}>♫</Text></View>}
+              <View style={styles.songDetails}>
+                <Text style={styles.songTitle}>{song.title}</Text><Text style={styles.artist}>{song.artist}</Text>
+                <Pressable accessibilityRole="button" accessibilityLabel={`Remove ${song.title} from liked songs`} onPress={() => toggleSong(toToggleableSong(song))}><Text style={styles.remove}>Remove</Text></Pressable>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.heading}>Playlists</Text>
+          <View style={styles.createRow}>
+            <TextInput accessibilityLabel="New playlist name" onChangeText={setNewPlaylistName} placeholder="New playlist name" placeholderTextColor="#BDB6A4" style={styles.input} value={newPlaylistName} />
+            <Pressable accessibilityRole="button" onPress={createPlaylist} style={styles.createButton}><Text style={styles.createText}>Create playlist</Text></Pressable>
+          </View>
+          {data.playlists.length === 0 ? <Text style={styles.muted}>Create a playlist to organize your liked songs.</Text> : <View style={styles.playlistChoices}>{data.playlists.map((playlist) => (
+            <Pressable key={playlist.id} accessibilityRole="button" onPress={() => setSelectedPlaylistId(playlist.id)} style={[styles.playlistChoice, selectedPlaylistId === playlist.id && styles.selectedPlaylistChoice]}>
+              <Text style={[styles.playlistName, selectedPlaylistId === playlist.id && styles.selectedPlaylistName]}>{playlist.name}</Text>
+              <Text style={[styles.count, selectedPlaylistId === playlist.id && styles.selectedCount]}>{playlist.songIds.length} song{playlist.songIds.length === 1 ? '' : 's'}</Text>
             </Pressable>
-          </ExternalLink>
-        </ThemedView>
+          ))}</View>}
+        </View>
 
-        <ThemedView style={styles.sectionsWrapper}>
-          <Collapsible title="File-based routing">
-            <ThemedText type="small">
-              This app has two screens: <ThemedText type="code">src/app/index.tsx</ThemedText> and{' '}
-              <ThemedText type="code">src/app/explore.tsx</ThemedText>
-            </ThemedText>
-            <ThemedText type="small">
-              The layout file in <ThemedText type="code">src/app/_layout.tsx</ThemedText> sets up
-              the tab navigator.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/router/introduction">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Android, iOS, and web support">
-            <ThemedView type="backgroundElement" style={styles.collapsibleContent}>
-              <ThemedText type="small">
-                You can open this project on Android, iOS, and the web. To open the web version,
-                press <ThemedText type="smallBold">w</ThemedText> in the terminal running this
-                project.
-              </ThemedText>
-              <Image
-                source={require('@/assets/images/tutorial-web.png')}
-                style={styles.imageTutorial}
-              />
-            </ThemedView>
-          </Collapsible>
-
-          <Collapsible title="Images">
-            <ThemedText type="small">
-              For static images, you can use the <ThemedText type="code">@2x</ThemedText> and{' '}
-              <ThemedText type="code">@3x</ThemedText> suffixes to provide files for different
-              screen densities.
-            </ThemedText>
-            <Image source={require('@/assets/images/react-logo.png')} style={styles.imageReact} />
-            <ExternalLink href="https://reactnative.dev/docs/images">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Light and dark mode components">
-            <ThemedText type="small">
-              This template has light and dark mode support. The{' '}
-              <ThemedText type="code">useColorScheme()</ThemedText> hook lets you inspect what the
-              user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Animations">
-            <ThemedText type="small">
-              This template includes an example of an animated component. The{' '}
-              <ThemedText type="code">src/components/ui/collapsible.tsx</ThemedText> component uses
-              the powerful <ThemedText type="code">react-native-reanimated</ThemedText> library to
-              animate opening this hint.
-            </ThemedText>
-          </Collapsible>
-        </ThemedView>
-        {Platform.OS === 'web' && <WebBadge />}
-      </ThemedView>
-    </ScrollView>
+        {selectedPlaylist && <View style={styles.section}>
+          <View style={styles.selectionHeader}><Text style={styles.heading}>{selectedPlaylist.name}</Text><Pressable accessibilityRole="button" onPress={deleteSelectedPlaylist}><Text style={styles.delete}>Delete playlist</Text></Pressable></View>
+          {data.likedSongs.filter((song) => !selectedPlaylist.songIds.includes(song.id)).map((song) => (
+            <View key={song.id} style={styles.membershipRow}><Text style={styles.membershipTitle}>{song.title} · {song.artist}</Text><Pressable accessibilityRole="button" accessibilityLabel={`Add ${song.title} to ${selectedPlaylist.name}`} onPress={() => addToPlaylist(selectedPlaylist.id, song.id)}><Text style={styles.add}>Add</Text></Pressable></View>
+          ))}
+          {selectedSongs.length === 0 ? <Text style={styles.muted}>No songs in this playlist yet.</Text> : selectedSongs.map((song) => (
+            <View key={song.id} style={styles.membershipRow}><Text style={styles.membershipTitle}>{song.title} · {song.artist}</Text><Pressable accessibilityRole="button" accessibilityLabel={`Remove ${song.title} from ${selectedPlaylist.name}`} onPress={() => removeFromPlaylist(selectedPlaylist.id, song.id)}><Text style={styles.remove}>Remove</Text></Pressable></View>
+          ))}
+        </View>}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  contentContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  container: {
-    maxWidth: MaxContentWidth,
-    flexGrow: 1,
-  },
-  titleContainer: {
-    gap: Spacing.three,
-    alignItems: 'center',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.six,
-  },
-  centerText: {
-    textAlign: 'center',
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  linkButton: {
-    flexDirection: 'row',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.two,
-    borderRadius: Spacing.five,
-    justifyContent: 'center',
-    gap: Spacing.one,
-    alignItems: 'center',
-  },
-  sectionsWrapper: {
-    gap: Spacing.five,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.three,
-  },
-  collapsibleContent: {
-    alignItems: 'center',
-  },
-  imageTutorial: {
-    width: '100%',
-    aspectRatio: 296 / 171,
-    borderRadius: Spacing.three,
-    marginTop: Spacing.two,
-  },
-  imageReact: {
-    width: 100,
-    height: 100,
-    alignSelf: 'center',
-  },
+  screen: { flex: 1, backgroundColor: '#0B0B0A' }, content: { gap: 18, padding: 24, paddingBottom: 48 }, backLink: { color: '#F7C948', fontWeight: '800', marginTop: 8 }, hero: { gap: 7, marginTop: 8 }, kicker: { color: '#F7C948', fontWeight: '800', letterSpacing: 2 }, title: { color: '#FFF7DF', fontSize: 36, fontWeight: '800' }, subtitle: { color: '#BDB6A4', fontSize: 16, lineHeight: 24 }, section: { backgroundColor: '#181714', borderColor: '#3B372C', borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }, heading: { color: '#FFF7DF', fontSize: 20, fontWeight: '800' }, muted: { color: '#BDB6A4', lineHeight: 22 }, empty: { color: '#D8CFB6', lineHeight: 22 }, error: { color: '#FFAAA8' }, songCard: { flexDirection: 'row', gap: 12 }, artwork: { borderRadius: 10, height: 56, width: 56 }, artworkFallback: { alignItems: 'center', backgroundColor: '#F7C948', borderRadius: 10, height: 56, justifyContent: 'center', width: 56 }, note: { color: '#0B0B0A', fontSize: 26, fontWeight: '800' }, songDetails: { flex: 1, gap: 3 }, songTitle: { color: '#FFF7DF', fontSize: 17, fontWeight: '800' }, artist: { color: '#BDB6A4' }, remove: { color: '#FFAAA8', fontWeight: '800', marginTop: 4 }, createRow: { gap: 10 }, input: { backgroundColor: '#0B0B0A', borderColor: '#3B372C', borderRadius: 12, borderWidth: 1, color: '#FFF7DF', padding: 13 }, createButton: { alignItems: 'center', backgroundColor: '#F7C948', borderRadius: 12, padding: 13 }, createText: { color: '#0B0B0A', fontWeight: '800' }, playlistChoices: { gap: 8 }, playlistChoice: { borderColor: '#3B372C', borderRadius: 12, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', padding: 13 }, selectedPlaylistChoice: { backgroundColor: '#F7C948', borderColor: '#F7C948' }, playlistName: { color: '#FFF7DF', fontWeight: '800' }, selectedPlaylistName: { color: '#0B0B0A' }, count: { color: '#BDB6A4' }, selectedCount: { color: '#42370A' }, selectionHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' }, delete: { color: '#FFAAA8', fontWeight: '800' }, membershipRow: { alignItems: 'center', borderTopColor: '#3B372C', borderTopWidth: 1, flexDirection: 'row', gap: 12, justifyContent: 'space-between', paddingTop: 12 }, membershipTitle: { color: '#D8CFB6', flex: 1 }, add: { color: '#F7C948', fontWeight: '800' },
 });

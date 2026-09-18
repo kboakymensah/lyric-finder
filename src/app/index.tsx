@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Link } from 'expo-router';
+import { ActivityIndicator, Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { validateLyrics } from '../../lib/validation';
 import { fetchWithTimeout } from '../../lib/request';
 import { SongResults } from '../components/song-results';
+import { useLibrary } from '../contexts/library-context';
 import { usePreviewPlayer } from '../hooks/use-preview-player';
 import type { SongResult } from '../types/song';
 
@@ -13,6 +15,18 @@ export default function Home() {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { playingId, togglePreview } = usePreviewPlayer();
+  const { error: libraryError, isLiked, toggleSong } = useLibrary();
+
+  async function openExternal(url: string | null, unavailableMessage: string) {
+    if (!url) return setMessage(unavailableMessage);
+
+    try {
+      if (!(await Linking.canOpenURL(url))) return setMessage(unavailableMessage);
+      await Linking.openURL(url);
+    } catch {
+      setMessage(unavailableMessage);
+    }
+  }
 
   async function search() {
     const error = validateLyrics(lyrics);
@@ -62,15 +76,21 @@ export default function Home() {
           value={lyrics}
         />
         {message && <Text style={s.error}>{message}</Text>}
+        {libraryError && <Text style={s.error}>{libraryError}</Text>}
         <Pressable accessibilityRole="button" disabled={loading} onPress={search} style={[s.button, loading && s.buttonDisabled]}>
           {loading ? <ActivityIndicator color="#0B0B0A" /> : <Text style={s.buttonText}>Find my song</Text>}
         </Pressable>
+        <Link href="/explore" style={s.libraryLink}>Open my library</Link>
 
         <SongResults
           songs={songs}
           hasSearched={hasSearched}
           isPlayingId={playingId}
           onTogglePreview={togglePreview}
+          isSaved={isLiked}
+          onViewLyrics={(song) => openExternal(song.lyricsUrl, 'Lyrics are unavailable for this song.')}
+          onListen={(song) => openExternal(song.listenUrl, 'Listening is unavailable for this song.')}
+          onToggleSaved={toggleSong}
         />
       </ScrollView>
     </SafeAreaView>
@@ -99,5 +119,6 @@ const s = StyleSheet.create({
   button: { alignItems: 'center', backgroundColor: '#F7C948', borderRadius: 16, padding: 18 },
   buttonDisabled: { opacity: 0.65 },
   buttonText: { color: '#0B0B0A', fontWeight: '800', fontSize: 17 },
+  libraryLink: { alignSelf: 'center', color: '#F7C948', fontSize: 16, fontWeight: '800', paddingVertical: 4 },
   error: { color: '#FFAAA8' },
 });
