@@ -102,6 +102,32 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     [persist],
   );
 
+  const create = useCallback(
+    (name: string) => {
+      let createdPlaylistId: string | null = null;
+
+      update((library) => {
+        const nextLibrary = createPlaylist(library, name);
+        if (nextLibrary.playlists.length === library.playlists.length) return nextLibrary;
+
+        const createdIndex = nextLibrary.playlists.length - 1;
+        if (!createdPlaylistId) {
+          createdPlaylistId = nextLibrary.playlists[createdIndex].id;
+          return nextLibrary;
+        }
+
+        const replayedPlaylistId = createdPlaylistId;
+        return {
+          ...nextLibrary,
+          playlists: nextLibrary.playlists.map((playlist, index) =>
+            index === createdIndex ? { ...playlist, id: replayedPlaylistId } : playlist,
+          ),
+        };
+      });
+    },
+    [update],
+  );
+
   const value = useMemo<LibraryContextValue>(
     () => ({
       data,
@@ -109,14 +135,14 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       error,
       isLiked: (songId) => data.likedSongs.some((song) => song.id === songId),
       toggleSong: (song) => update((library) => toggleLikedSong(library, toSavedSong(song))),
-      create: (name) => update((library) => createPlaylist(library, name)),
+      create,
       removePlaylist: (playlistId) => update((library) => deletePlaylist(library, playlistId)),
       addToPlaylist: (playlistId, songId) =>
         update((library) => addSongToPlaylist(library, playlistId, songId)),
       removeFromPlaylist: (playlistId, songId) =>
         update((library) => removeSongFromPlaylist(library, playlistId, songId)),
     }),
-    [data, error, status, update],
+    [create, data, error, status, update],
   );
 
   return <LibraryContext.Provider value={value}>{children}</LibraryContext.Provider>;

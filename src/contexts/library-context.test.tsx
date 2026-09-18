@@ -159,6 +159,43 @@ describe('LibraryProvider', () => {
     expect(library!.isLiked('stored-song')).toBe(true);
   });
 
+  it('keeps a created playlist ID for subsequent queued playlist mutations', async () => {
+    let resolveRead!: (value: string | null) => void;
+    storage.getItem.mockReturnValue(
+      new Promise<string | null>((resolve) => {
+        resolveRead = resolve;
+      }),
+    );
+    storage.setItem.mockResolvedValue(undefined);
+
+    let library: ReturnType<typeof useLibrary> | undefined;
+    const Consumer = () => {
+      library = useLibrary();
+      return null;
+    };
+
+    act(() => {
+      create(
+        <LibraryProvider>
+          <Consumer />
+        </LibraryProvider>,
+      );
+    });
+
+    act(() => library!.toggleSong(song));
+    act(() => library!.create('Road Trip'));
+    const playlistId = library!.data.playlists[0].id;
+    act(() => library!.addToPlaylist(playlistId, song.id));
+
+    await act(async () => {
+      resolveRead(null);
+    });
+
+    expect(library!.data.playlists).toEqual([
+      { id: playlistId, name: 'Road Trip', songIds: [song.id] },
+    ]);
+  });
+
   it('reports a readable error and keeps an empty library when loading fails', async () => {
     storage.getItem.mockRejectedValue(new Error('device unavailable'));
 
