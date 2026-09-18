@@ -68,7 +68,7 @@ export async function searchSongs(query: string, fetcher: Fetcher = fetch, optio
     return {
       id: String(match.id), title: match.title, artist: match.primary_artist.name,
       artworkUrl: match.song_art_image_url ?? catalog?.artworkUrl100 ?? null,
-      lyricSnippet: null, previewUrl: catalog?.previewUrl ?? null,
+      lyricsUrl: match.url ?? null, lyricSnippet: null, previewUrl: catalog?.previewUrl ?? null,
       listenUrl: catalog?.trackViewUrl ?? match.url ?? `https://www.google.com/search?q=${encodeURIComponent(`${match.title} ${match.primary_artist.name} song`)}`,
       matchScore: 100,
     };
@@ -96,6 +96,6 @@ export async function searchSongs(query: string, fetcher: Fetcher = fetch, optio
 
   return Promise.all(matches.map(async ({ match }) => {
     const catalog = await enrichWithITunes(match.trackName, match.artistName, fetcher);
-    return { id: String(match.id), title: match.trackName, artist: match.artistName, artworkUrl: catalog?.artworkUrl100 ?? null, lyricSnippet: snippet(match.plainLyrics), previewUrl: catalog?.previewUrl ?? null, listenUrl: catalog?.trackViewUrl ?? `https://www.google.com/search?q=${encodeURIComponent(`${match.trackName} ${match.artistName} song`)}`, matchScore: scoreLyricMatch(query, match.plainLyrics) };
+    return { id: String(match.id), title: match.trackName, artist: match.artistName, artworkUrl: catalog?.artworkUrl100 ?? null, lyricsUrl: null, lyricSnippet: snippet(match.plainLyrics), previewUrl: catalog?.previewUrl ?? null, listenUrl: catalog?.trackViewUrl ?? `https://www.google.com/search?q=${encodeURIComponent(`${match.trackName} ${match.artistName} song`)}`, matchScore: scoreLyricMatch(query, match.plainLyrics) };
   }));
 }
