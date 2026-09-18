@@ -3,6 +3,15 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('expo-image', () => ({ Image: 'Image' }));
 vi.mock('react-native', () => ({
+  Animated: {
+    View: 'AnimatedView',
+    Value: class {
+      interpolate() {
+        return 'animated-background';
+      }
+    },
+    timing: () => ({ start: () => {} }),
+  },
   Pressable: 'Pressable',
   StyleSheet: { create: <T,>(styles: T) => styles },
   Text: 'Text',
@@ -150,7 +159,7 @@ describe('SongResultCard', () => {
     expect(onToggleSaved).toHaveBeenCalledWith(song);
   });
 
-  it('hides View Lyrics when no lyrics URL is available', () => {
+  it('keeps View Lyrics available when a result has no direct Genius URL', () => {
     let card: ReturnType<typeof create>;
     act(() => {
       card = create(
@@ -167,7 +176,42 @@ describe('SongResultCard', () => {
       );
     });
 
-    expect(card!.root.findAllByProps({ accessibilityLabel: 'View lyrics for Hello' })).toHaveLength(0);
+    expect(card!.root.findAllByProps({ accessibilityLabel: 'View lyrics for Hello' })).toHaveLength(1);
+  });
+
+  it('briefly confirms a successful playlist add before returning the bar to normal', () => {
+    vi.useFakeTimers();
+    const onAddToPlaylist = vi.fn();
+    let card: ReturnType<typeof create>;
+    act(() => {
+      card = create(
+        <SongResultCard
+          song={song}
+          emphasis="best"
+          isPlaying={false}
+          isSaved={false}
+          onTogglePreview={vi.fn()}
+          onViewLyrics={vi.fn()}
+          onListen={vi.fn()}
+          onToggleSaved={vi.fn()}
+          playlists={[{ id: 'road-trip', name: 'Road Trip', songs: [] }]}
+          onAddToPlaylist={onAddToPlaylist}
+        />,
+      );
+    });
+
+    act(() => card!.root.findByProps({ accessibilityLabel: 'Add Hello to a playlist' }).props.onPress());
+    act(() => card!.root.findByProps({ accessibilityLabel: 'Add Hello to Road Trip' }).props.onPress());
+
+    expect(card!.root.findAllByProps({ accessibilityLabel: 'Added Hello to a playlist' })).toHaveLength(1);
+    expect(card!.root.findAll((node) => String(node.type) === 'Text').map((node) => node.children.join(''))).toContain('Added to Playlist ✓');
+
+    act(() => {
+      vi.advanceTimersByTime(1600);
+    });
+
+    expect(card!.root.findAllByProps({ accessibilityLabel: 'Add Hello to a playlist' })).toHaveLength(1);
+    vi.useRealTimers();
   });
 
   it('labels the save control as removing a saved song', () => {

@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Playlist } from '../lib/library';
 import type { SongResult } from '../types/song';
@@ -31,7 +31,29 @@ export function SongResultCard({
   onAddToPlaylist = () => {},
 }: SongResultCardProps) {
   const [showPlaylistPicker, setShowPlaylistPicker] = useState(false);
+  const [playlistAdded, setPlaylistAdded] = useState(false);
+  const playlistHighlight = useRef(new Animated.Value(0)).current;
   const previewLabel = `${isPlaying ? 'Pause' : 'Play 30-second preview of'} ${song.title}`;
+
+  useEffect(() => {
+    Animated.timing(playlistHighlight, {
+      toValue: playlistAdded ? 1 : 0,
+      duration: 220,
+      useNativeDriver: false,
+    }).start();
+
+    if (!playlistAdded) {
+      return;
+    }
+
+    const resetTimer = setTimeout(() => setPlaylistAdded(false), 1500);
+    return () => clearTimeout(resetTimer);
+  }, [playlistAdded, playlistHighlight]);
+
+  const playlistBarColor = playlistHighlight.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['#25231C', '#2F9E44'],
+  });
 
   return (
     <View style={[styles.card, emphasis === 'best' && styles.bestCard]}>
@@ -58,15 +80,13 @@ export function SongResultCard({
         {song.lyricSnippet && <Text style={styles.snippet}>“{song.lyricSnippet}”</Text>}
 
         <View style={styles.actions}>
-          {song.lyricsUrl && (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`View lyrics for ${song.title}`}
-              onPress={() => onViewLyrics(song)}
-              style={[styles.actionBar, styles.lyricsBar]}>
-              <Text style={styles.actionText}>View Lyrics</Text>
-            </Pressable>
-          )}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`View lyrics for ${song.title}`}
+            onPress={() => onViewLyrics(song)}
+            style={[styles.actionBar, styles.lyricsBar]}>
+            <Text style={styles.actionText}>View Lyrics</Text>
+          </Pressable>
           {song.previewUrl && (
             <Pressable accessibilityRole="button" accessibilityLabel={previewLabel} onPress={onTogglePreview} style={[styles.actionBar, styles.previewBar]}>
               <Text style={styles.actionText}>{isPlaying ? 'Pause Preview' : 'Play 30-second Preview'}</Text>
@@ -75,13 +95,15 @@ export function SongResultCard({
           <Pressable accessibilityRole="button" accessibilityLabel={`Listen to ${song.title} in Apple Music`} onPress={() => onListen(song)} style={[styles.actionBar, styles.listenBar]}>
             <Text style={[styles.actionText, styles.listenText]}>Listen in Apple Music</Text>
           </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Add ${song.title} to a playlist`}
-            onPress={() => setShowPlaylistPicker((isOpen) => !isOpen)}
-            style={[styles.actionBar, styles.playlistBar]}>
-            <Text style={styles.actionText}>Add to Playlist</Text>
-          </Pressable>
+          <Animated.View style={[styles.actionBar, styles.playlistBar, { backgroundColor: playlistBarColor }]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={playlistAdded ? `Added ${song.title} to a playlist` : `Add ${song.title} to a playlist`}
+              onPress={() => setShowPlaylistPicker((isOpen) => !isOpen)}
+              style={styles.playlistPressable}>
+              <Text style={styles.actionText}>{playlistAdded ? 'Added to Playlist ✓' : 'Add to Playlist'}</Text>
+            </Pressable>
+          </Animated.View>
           {showPlaylistPicker && (
             <View style={styles.playlistPicker}>
               {playlists.length === 0 ? (
@@ -95,6 +117,7 @@ export function SongResultCard({
                     onPress={() => {
                       onAddToPlaylist(playlist.id, song);
                       setShowPlaylistPicker(false);
+                      setPlaylistAdded(true);
                     }}
                     style={styles.playlistChoice}>
                     <Text style={styles.playlistChoiceText}>{playlist.name}</Text>
@@ -185,7 +208,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   playlistBar: {
-    backgroundColor: '#25231C',
+    overflow: 'hidden',
+  },
+  playlistPressable: {
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 11,
   },
   actionText: {
     color: '#FFF7DF',
