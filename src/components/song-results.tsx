@@ -8,9 +8,25 @@ type SongResultsProps = {
   hasSearched: boolean;
   isPlayingId: string | null;
   onTogglePreview: (song: SongResult) => void;
+  isSaved?: (songId: string) => boolean;
+  onViewLyrics?: (song: SongResult) => void;
+  onListen?: (song: SongResult) => void;
+  onToggleSaved?: (song: SongResult) => void;
 };
 
-export function SongResults({ songs, hasSearched, isPlayingId, onTogglePreview }: SongResultsProps) {
+const noAction = () => {};
+const isNotSaved = () => false;
+
+export function SongResults({
+  songs,
+  hasSearched,
+  isPlayingId,
+  onTogglePreview,
+  isSaved = isNotSaved,
+  onViewLyrics = noAction,
+  onListen = noAction,
+  onToggleSaved = noAction,
+}: SongResultsProps) {
   if (!hasSearched) {
     return null;
   }
@@ -32,7 +48,11 @@ export function SongResults({ songs, hasSearched, isPlayingId, onTogglePreview }
         song={bestMatch}
         emphasis="best"
         isPlaying={isPlayingId === bestMatch.id}
+        isSaved={isSaved(bestMatch.id)}
         onTogglePreview={() => onTogglePreview(bestMatch)}
+        onViewLyrics={onViewLyrics}
+        onListen={onListen}
+        onToggleSaved={onToggleSaved}
       />
 
       {alternatives.length > 0 && (
@@ -44,7 +64,11 @@ export function SongResults({ songs, hasSearched, isPlayingId, onTogglePreview }
               song={song}
               emphasis="alternative"
               isPlaying={isPlayingId === song.id}
+              isSaved={isSaved(song.id)}
               onTogglePreview={() => onTogglePreview(song)}
+              onViewLyrics={onViewLyrics}
+              onListen={onListen}
+              onToggleSaved={onToggleSaved}
             />
           ))}
         </View>

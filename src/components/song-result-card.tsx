@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { SongResult } from '../types/song';
 
@@ -7,10 +7,23 @@ type SongResultCardProps = {
   song: SongResult;
   emphasis: 'best' | 'alternative';
   isPlaying: boolean;
+  isSaved: boolean;
   onTogglePreview: () => void;
+  onViewLyrics: (song: SongResult) => void;
+  onListen: (song: SongResult) => void;
+  onToggleSaved: (song: SongResult) => void;
 };
 
-export function SongResultCard({ song, emphasis, isPlaying, onTogglePreview }: SongResultCardProps) {
+export function SongResultCard({
+  song,
+  emphasis,
+  isPlaying,
+  isSaved,
+  onTogglePreview,
+  onViewLyrics,
+  onListen,
+  onToggleSaved,
+}: SongResultCardProps) {
   const previewLabel = `${isPlaying ? 'Pause' : 'Preview'} ${song.title}`;
 
   return (
@@ -29,16 +42,27 @@ export function SongResultCard({ song, emphasis, isPlaying, onTogglePreview }: S
         {song.lyricSnippet && <Text style={styles.snippet}>“{song.lyricSnippet}”</Text>}
 
         <View style={styles.actions}>
-          {song.previewUrl && (
-            <Pressable accessibilityRole="button" accessibilityLabel={previewLabel} onPress={onTogglePreview}>
-              <Text style={styles.preview}>{isPlaying ? 'Pause' : 'Preview'}</Text>
+          {song.lyricsUrl && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`View lyrics for ${song.title}`}
+              onPress={() => onViewLyrics(song)}>
+              <Text style={styles.lyrics}>View Lyrics</Text>
             </Pressable>
           )}
+          {song.previewUrl && (
+            <Pressable accessibilityRole="button" accessibilityLabel={previewLabel} onPress={onTogglePreview}>
+              <Text style={styles.preview}>{isPlaying ? 'Pause' : 'Play Preview'}</Text>
+            </Pressable>
+          )}
+          <Pressable accessibilityRole="button" accessibilityLabel={`Listen to ${song.title}`} onPress={() => onListen(song)}>
+            <Text style={styles.listen}>Listen</Text>
+          </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Listen to ${song.title}`}
-            onPress={() => void Linking.openURL(song.listenUrl)}>
-            <Text style={styles.listen}>Listen</Text>
+            accessibilityLabel={isSaved ? `Remove ${song.title} from liked songs` : `Save ${song.title}`}
+            onPress={() => onToggleSaved(song)}>
+            <Text style={styles.save}>{isSaved ? 'Remove' : 'Save'}</Text>
           </Pressable>
         </View>
       </View>
@@ -97,6 +121,7 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 16,
     marginTop: 8,
   },
@@ -104,8 +129,16 @@ const styles = StyleSheet.create({
     color: '#FFF7DF',
     fontWeight: '700',
   },
+  lyrics: {
+    color: '#D8CFB6',
+    fontWeight: '700',
+  },
   listen: {
     color: '#F7C948',
+    fontWeight: '800',
+  },
+  save: {
+    color: '#FFF7DF',
     fontWeight: '800',
   },
 });
