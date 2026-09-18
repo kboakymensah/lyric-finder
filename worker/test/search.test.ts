@@ -38,15 +38,22 @@ describe('searchSongs', () => {
         url: 'https://genius.com/Adele-hello-lyrics',
       } }] } }));
       if (url.hostname === 'itunes.apple.com') return new Response(JSON.stringify({ results: [{
-        trackId: 2, trackName: 'Hello', artistName: 'Adele', artworkUrl100: 'https://itunes.example/cover.jpg', previewUrl: 'https://itunes.example/preview', trackViewUrl: 'https://itunes.example/track',
+        trackId: 2, trackName: 'Hello', artistName: 'Adele', artworkUrl100: 'https://itunes.example/cover.jpg', previewUrl: 'https://itunes.example/preview', trackViewUrl: 'https://music.apple.com/example',
       }] }));
       throw new Error(`Unexpected request to ${url.hostname}`);
     });
 
-    await expect(searchSongs('hello from the other side', fetcher, { geniusAccessToken: 'test-token' })).resolves.toEqual([
+    const results = await searchSongs('hello from the other side', fetcher, { geniusAccessToken: 'test-token' });
+
+    expect(results[0]).toMatchObject({
+      title: 'Hello',
+      lyricsUrl: 'https://genius.com/Adele-hello-lyrics',
+      listenUrl: 'https://music.apple.com/example',
+    });
+    expect(results).toEqual([
       expect.objectContaining({
         id: '987', title: 'Hello', artist: 'Adele', artworkUrl: 'https://genius.example/hello.jpg',
-        previewUrl: 'https://itunes.example/preview', listenUrl: 'https://itunes.example/track', matchScore: 100,
+        previewUrl: 'https://itunes.example/preview', listenUrl: 'https://music.apple.com/example', matchScore: 100,
       }),
     ]);
   });
@@ -60,7 +67,10 @@ describe('searchSongs', () => {
       throw new Error(`Unexpected request to ${url.hostname}`);
     });
 
-    await expect(searchSongs('hello from the other side', fetcher, { geniusAccessToken: 'test-token' })).resolves.toEqual([
+    const results = await searchSongs('hello from the other side', fetcher, { geniusAccessToken: 'test-token' });
+
+    expect(results[0].lyricsUrl).toBeNull();
+    expect(results).toEqual([
       expect.objectContaining({ id: '3', title: 'Hello', artist: 'Adele', matchScore: 100 }),
     ]);
   });

@@ -20,6 +20,7 @@ const song: SongResult = {
   title: 'Hello',
   artist: 'Adele',
   artworkUrl: null,
+  lyricsUrl: 'https://example.test/hello-lyrics',
   lyricSnippet: 'Hello from the other side',
   previewUrl: 'https://example.test/hello-preview.m4a',
   listenUrl: 'https://example.test/hello',
