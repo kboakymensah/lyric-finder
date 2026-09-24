@@ -82,6 +82,7 @@ export default function Home() {
           {loading ? <ActivityIndicator color="#0B0B0A" /> : <Text style={s.buttonText}>Find my song</Text>}
         </Pressable>
         <Link href="/explore" style={s.libraryLink}>Open my library</Link>
+        <Link href="/hum-spike" style={s.spikeLink}>Try the humming spike</Link>
 
         <SongResults
           songs={songs}
@@ -131,5 +132,6 @@ const s = StyleSheet.create({
   buttonDisabled: { opacity: 0.65 },
   buttonText: { color: '#0B0B0A', fontWeight: '800', fontSize: 17 },
   libraryLink: { alignSelf: 'center', color: '#F7C948', fontSize: 16, fontWeight: '800', paddingVertical: 4 },
+  spikeLink: { alignSelf: 'center', color: '#BDB6A4', fontSize: 15, fontWeight: '700', paddingVertical: 4 },
   error: { color: '#FFAAA8' },
 });
