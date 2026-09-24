@@ -8,11 +8,17 @@ const recorder = {
   uri: null as string | null,
 };
 
+const player = {
+  play: vi.fn(),
+  replace: vi.fn(),
+};
+
 vi.mock('expo-audio', () => ({
   RecordingPresets: { HIGH_QUALITY: {} },
   requestRecordingPermissionsAsync: vi.fn(async () => ({ granted: true })),
+  useAudioPlayer: () => player,
   useAudioRecorder: () => recorder,
-  useAudioRecorderState: () => ({ durationMillis: 0, isRecording: false }),
+  useAudioRecorderState: () => ({ durationMillis: 1250, isRecording: false }),
 }));
 
 vi.mock('expo-router', () => ({ Link: 'Link' }));
@@ -59,5 +65,27 @@ describe('HumSpikeScreen', () => {
     });
 
     expect(recorder.stop).toHaveBeenCalledOnce();
+  });
+
+  it('shows the captured recording details and replays the hum', async () => {
+    recorder.uri = 'file:///cache/hum.m4a';
+    let screen: ReturnType<typeof create>;
+    await act(async () => {
+      screen = create(<HumSpikeScreen />);
+    });
+    await act(async () => {
+      await screen!.root.findByProps({ accessibilityLabel: 'Start humming recording' }).props.onPress();
+    });
+    await act(async () => {
+      await screen!.root.findByProps({ accessibilityLabel: 'Stop humming recording' }).props.onPress();
+    });
+
+    const text = screen!.root.findAll((node) => String(node.type) === 'Text').map((node) => node.children.join(''));
+    expect(text).toContain('Duration: 1.3 seconds');
+    expect(text).toContain('Recording saved: file:///cache/hum.m4a');
+
+    act(() => screen!.root.findByProps({ accessibilityLabel: 'Replay humming recording' }).props.onPress());
+    expect(player.replace).toHaveBeenCalledWith('file:///cache/hum.m4a');
+    expect(player.play).toHaveBeenCalledOnce();
   });
 });

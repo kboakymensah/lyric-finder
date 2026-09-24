@@ -1,4 +1,4 @@
-import { RecordingPresets, requestRecordingPermissionsAsync, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
+import { RecordingPresets, requestRecordingPermissionsAsync, useAudioPlayer, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -6,8 +6,10 @@ import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'rea
 export default function HumSpikeScreen() {
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(recorder);
+  const player = useAudioPlayer();
   const [isRecording, setIsRecording] = useState(false);
   const [message, setMessage] = useState('This feasibility test records a short hum. It does not identify songs yet.');
+  const [capturedRecording, setCapturedRecording] = useState<{ durationMillis: number; uri: string } | null>(null);
 
   async function startRecording() {
     const permission = await requestRecordingPermissionsAsync();
@@ -25,7 +27,18 @@ export default function HumSpikeScreen() {
   async function stopRecording() {
     await recorder.stop();
     setIsRecording(false);
-    setMessage('Recording captured. Playback and basic analysis are the next step in this spike.');
+    if (recorder.uri) {
+      setCapturedRecording({ durationMillis: recorderState.durationMillis, uri: recorder.uri });
+      setMessage('Recording captured. You can replay it and review the basic recording details below.');
+      return;
+    }
+    setMessage('The recording stopped, but no audio file was returned. Please try again.');
+  }
+
+  function replayRecording() {
+    if (!capturedRecording) return;
+    player.replace(capturedRecording.uri);
+    player.play();
   }
 
   return (
@@ -48,6 +61,15 @@ export default function HumSpikeScreen() {
           >
             <Text style={styles.buttonText}>{isRecording ? 'Stop recording' : 'Start humming'}</Text>
           </Pressable>
+          {capturedRecording && (
+            <View style={styles.recordingDetails}>
+              <Text style={styles.detail}>Duration: {(capturedRecording.durationMillis / 1000).toFixed(1)} seconds</Text>
+              <Text selectable style={styles.detail}>Recording saved: {capturedRecording.uri}</Text>
+              <Pressable accessibilityLabel="Replay humming recording" accessibilityRole="button" onPress={replayRecording} style={styles.replayButton}>
+                <Text style={styles.replayText}>Replay recording</Text>
+              </Pressable>
+            </View>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -68,4 +90,8 @@ const styles = StyleSheet.create({
   button: { alignItems: 'center', backgroundColor: '#F7C948', borderRadius: 12, padding: 15 },
   stopButton: { backgroundColor: '#FFAAA8' },
   buttonText: { color: '#0B0B0A', fontSize: 16, fontWeight: '800' },
+  recordingDetails: { borderTopColor: '#3B372C', borderTopWidth: 1, gap: 8, paddingTop: 14 },
+  detail: { color: '#D8CFB6', fontSize: 14, lineHeight: 20 },
+  replayButton: { alignItems: 'center', borderColor: '#F7C948', borderRadius: 12, borderWidth: 1, padding: 13 },
+  replayText: { color: '#F7C948', fontSize: 16, fontWeight: '800' },
 });
