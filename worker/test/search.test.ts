@@ -79,6 +79,26 @@ describe('searchSongs', () => {
     });
   });
 
+  it('accepts an iTunes title that only adds featured-artist text', async () => {
+    const fetcher: Fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(input instanceof Request ? input.url : String(input));
+      if (url.hostname === 'api.genius.com') return new Response(JSON.stringify({ response: { hits: [{ result: {
+        id: 200546, title: 'Hold On, We’re Going Home', primary_artist: { name: 'Drake' }, url: 'https://genius.com/Drake-hold-on-were-going-home-lyrics',
+      } }] } }));
+      if (url.hostname === 'itunes.apple.com') return new Response(JSON.stringify({ results: [{
+        trackId: 2, trackName: "Hold On, We're Going Home (feat. Majid Jordan)", artistName: 'Drake', previewUrl: 'https://preview.example/drake', trackViewUrl: 'https://music.apple.com/drake-hold-on',
+      }] }));
+      throw new Error(`Unexpected request to ${url.hostname}`);
+    });
+
+    const results = await searchSongs("just hold on we're going home", fetcher, { geniusAccessToken: 'test-token' });
+
+    expect(results[0]).toMatchObject({
+      previewUrl: 'https://preview.example/drake',
+      listenUrl: 'https://music.apple.com/drake-hold-on',
+    });
+  });
+
   it('falls back to LRCLIB when Genius has no lyric hits', async () => {
     const fetcher: Fetcher = vi.fn(async (input: RequestInfo | URL) => {
       const url = new URL(input instanceof Request ? input.url : String(input));
