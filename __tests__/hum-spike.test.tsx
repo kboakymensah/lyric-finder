@@ -13,8 +13,11 @@ const player = {
   replace: vi.fn(),
 };
 
+const audioMocks = vi.hoisted(() => ({ setAudioModeAsync: vi.fn() }));
+
 vi.mock('expo-audio', () => ({
   RecordingPresets: { HIGH_QUALITY: {} },
+  setAudioModeAsync: audioMocks.setAudioModeAsync,
   requestRecordingPermissionsAsync: vi.fn(async () => ({ granted: true })),
   useAudioPlayer: () => player,
   useAudioRecorder: () => recorder,
@@ -44,9 +47,10 @@ describe('HumSpikeScreen', () => {
     });
 
     await act(async () => {
-      await screen!.root.findByProps({ accessibilityLabel: 'Start humming recording' }).props.onPress();
+    await screen!.root.findByProps({ accessibilityLabel: 'Start humming recording' }).props.onPress();
     });
 
+    expect(audioMocks.setAudioModeAsync).toHaveBeenCalledWith({ allowsRecording: true, playsInSilentMode: true });
     expect(recorder.prepareToRecordAsync).toHaveBeenCalledOnce();
     expect(recorder.record).toHaveBeenCalledOnce();
   });

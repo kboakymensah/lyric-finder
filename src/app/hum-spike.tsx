@@ -1,4 +1,4 @@
-import { RecordingPresets, requestRecordingPermissionsAsync, useAudioPlayer, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
+import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioPlayer, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -18,10 +18,15 @@ export default function HumSpikeScreen() {
       return;
     }
 
-    await recorder.prepareToRecordAsync();
-    recorder.record();
-    setIsRecording(true);
-    setMessage('Recording your hum… tap Stop when you are finished.');
+    try {
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await recorder.prepareToRecordAsync();
+      recorder.record();
+      setIsRecording(true);
+      setMessage('Recording your hum… tap Stop when you are finished.');
+    } catch {
+      setMessage('Sorry, recording could not start. Please check microphone permission and try again.');
+    }
   }
 
   async function stopRecording() {
