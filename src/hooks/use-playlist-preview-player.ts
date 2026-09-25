@@ -1,5 +1,5 @@
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { buildPreviewQueue, clampPreviewSeek, nextQueueIndex, previousQueueIndex } from '../lib/preview-queue';
 import type { SavedSong } from '../types/song';
@@ -14,6 +14,7 @@ export function usePlaylistPreviewPlayer() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const handledFinishRef = useRef(false);
   const currentSong = queue[currentIndex] ?? null;
   const canPrevious = currentIndex > 0;
   const canNext = currentIndex < queue.length - 1;
@@ -91,7 +92,24 @@ export function usePlaylistPreviewPlayer() {
   }
 
   useEffect(() => {
-    if (!status.didJustFinish) return;
+    setIsPlaying(status.playing);
+  }, [status.playing]);
+
+  useEffect(() => {
+    if (!status.error) return;
+    player.pause();
+    setIsPlaying(false);
+    setMessage(playbackError);
+  }, [player, status.error]);
+
+  useEffect(() => {
+    if (!status.didJustFinish) {
+      handledFinishRef.current = false;
+      return;
+    }
+    if (handledFinishRef.current) return;
+    handledFinishRef.current = true;
+
     if (!canNext) {
       setIsPlaying(false);
       return;
