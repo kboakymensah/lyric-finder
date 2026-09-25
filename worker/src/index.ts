@@ -1,8 +1,16 @@
 import { Hono } from 'hono';
+import { lookupSyncedLyrics } from './lyrics';
 import { searchSongs } from './search';
 
 type Bindings = { GENIUS_ACCESS_TOKEN?: string };
 const app = new Hono<{ Bindings: Bindings }>();
+app.post('/lyrics', async (c) => {
+  const body: { title?: string; artist?: string } = await c.req.json<{ title?: string; artist?: string }>().catch(() => ({}));
+  const title = body.title?.trim() ?? '';
+  const artist = body.artist?.trim() ?? '';
+  if (!title || !artist || title.length > 160 || artist.length > 160) return c.json({ error: 'Provide a song title and artist.' }, 400);
+  return c.json(await lookupSyncedLyrics(title, artist));
+});
 app.post('/search', async (c) => {
   const body: { lyrics?: string } = await c.req.json<{ lyrics?: string }>().catch(() => ({}));
   const lyrics = body.lyrics?.trim() ?? '';
