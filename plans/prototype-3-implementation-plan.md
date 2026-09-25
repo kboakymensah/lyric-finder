@@ -9,19 +9,21 @@ Lyric Finder helps someone identify a song from remembered lyric lines, then sav
 - Lyric searches are sent to the project Worker and matched with Genius/LRCLIB and catalog data.
 - Results show a title, artist, artwork when available, a Genius lyrics action, a listening action, and a 30-second preview when the catalog provides one.
 - Songs can be saved to Liked Songs or added directly to local playlists.
-- The humming spike can request microphone access, record a short hum, show its recording URI and duration, and replay that recording.
+- Liked Songs and selected playlists can play a queue of available 30-second previews with pause, previous, next, and ten-second seek controls.
+- The player skips saved songs without a preview URL and clearly explains when a collection has no playable previews.
+- The humming spike proved microphone recording and replay were feasible. It is preserved in Git history but is not part of the current app experience.
 
 The humming spike is an audio-capture feasibility test only. It **does not identify a song from a hum**.
 
-## Next feature: playlist preview queue
+## Implemented feature: playlist preview queue
 
-The next major feature is a player for the songs in Liked Songs or a selected playlist. It will play only the 30-second preview URLs supplied by the catalog API; it will not stream full commercial songs.
+The Library now includes a player for Liked Songs or a selected playlist. It plays only the 30-second preview URLs supplied by the catalog API; it does not stream full commercial songs.
 
 ### Player experience
 
-1. The user opens Liked Songs or a playlist and taps a song or Play All.
+1. The user opens Liked Songs or a playlist and taps Play all.
 2. The app builds a queue from songs that have a preview URL, showing a clear message if none do.
-3. A bottom player shows artwork, title, artist, the queue position, and playback status.
+3. A player panel shows artwork, title, artist, and the queue position.
 4. The controls are:
    - Play / pause
    - Next song
@@ -31,14 +33,14 @@ The next major feature is a player for the songs in Liked Songs or a selected pl
 5. When a preview ends, the player advances to the next available preview in the current queue.
 6. The user can return to a song result, open Genius lyrics, or open the full-song listening link without losing their saved library.
 
-### Implementation steps
+### Completed implementation
 
-1. Add a `usePlaylistPreviewPlayer` hook with queue state: `queue`, `currentIndex`, `playing`, `currentTime`, `duration`, and `error`.
-2. Use `expo-audio` with one reusable audio player. Replace its source when the queue index changes.
-3. Add controls in the Library screen first, using existing saved song and playlist records.
-4. Filter out songs with no `previewUrl` and explain that those songs can still open in Apple Music but cannot play in-app.
-5. Add automated tests for queue creation, next/previous boundaries, seek clamping, skipped non-preview songs, and the no-preview state.
-6. Test the player in Expo Go on iPhone and Android, then make a new EAS update/build after verification.
+1. Added a `usePlaylistPreviewPlayer` hook with queue, active index, playback state, duration, and error state.
+2. Used one reusable `expo-audio` player and replace its source when the active queue item changes.
+3. Added Play all actions and the player controls to the Library screen.
+4. Filtered out songs with no `previewUrl` while keeping them saved and available for external listening.
+5. Added automated tests for queue filtering, navigation boundaries, seek clamping, unavailable previews, and player control boundaries.
+6. Remaining release verification: test playback on physical iPhone and Android devices, then publish an EAS update after both work.
 
 ## Future research: humming-based search
 
