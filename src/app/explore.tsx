@@ -5,7 +5,7 @@ import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View 
 
 import { useLibrary } from '../contexts/library-context';
 import { PlaylistPreviewPlayer } from '../components/playlist-preview-player';
-import { usePlaylistPreviewPlayer } from '../hooks/use-playlist-preview-player';
+import { usePreviewPlayer } from '../contexts/preview-player-context';
 import type { SavedSong } from '../types/song';
 
 const toToggleableSong = (song: SavedSong) => ({ ...song, lyricSnippet: null, matchScore: 0 });
@@ -14,7 +14,7 @@ export default function LibraryScreen() {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const { addToPlaylist, create, data, error, removeFromPlaylist, removePlaylist, status, toggleSong } = useLibrary();
-  const previewPlayer = usePlaylistPreviewPlayer();
+  const previewPlayer = usePreviewPlayer();
   const selectedPlaylist = data.playlists.find((playlist) => playlist.id === selectedPlaylistId) ?? null;
   const selectedSongs = selectedPlaylist?.songs ?? [];
 
@@ -45,7 +45,7 @@ export default function LibraryScreen() {
         <View style={styles.section}>
           <View style={styles.selectionHeader}>
             <Text style={styles.heading}>Liked songs</Text>
-            <Pressable accessibilityRole="button" accessibilityLabel="Play liked previews" onPress={() => previewPlayer.start(data.likedSongs)} style={styles.playButton}><Text style={styles.playButtonText}>Play all</Text></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel="Play liked previews" onPress={() => previewPlayer.startQueue(data.likedSongs)} style={styles.playButton}><Text style={styles.playButtonText}>Play all</Text></Pressable>
           </View>
           {status === 'loading' ? <Text style={styles.muted}>Loading your library…</Text> : data.likedSongs.length === 0 ? (
             <Text style={styles.empty}>Save a song from your search results to start your library.</Text>
@@ -75,7 +75,7 @@ export default function LibraryScreen() {
         </View>
 
         {selectedPlaylist && <View style={styles.section}>
-          <View style={styles.selectionHeader}><Text style={styles.heading}>{selectedPlaylist.name}</Text><View style={styles.headerActions}><Pressable accessibilityRole="button" accessibilityLabel={`Play ${selectedPlaylist.name} previews`} onPress={() => previewPlayer.start(selectedPlaylist.songs)} style={styles.playButton}><Text style={styles.playButtonText}>Play all</Text></Pressable><Pressable accessibilityRole="button" onPress={deleteSelectedPlaylist}><Text style={styles.delete}>Delete playlist</Text></Pressable></View></View>
+          <View style={styles.selectionHeader}><Text style={styles.heading}>{selectedPlaylist.name}</Text><View style={styles.headerActions}><Pressable accessibilityRole="button" accessibilityLabel={`Play ${selectedPlaylist.name} previews`} onPress={() => previewPlayer.startQueue(selectedPlaylist.songs)} style={styles.playButton}><Text style={styles.playButtonText}>Play all</Text></Pressable><Pressable accessibilityRole="button" onPress={deleteSelectedPlaylist}><Text style={styles.delete}>Delete playlist</Text></Pressable></View></View>
           {data.likedSongs.filter((song) => !selectedPlaylist.songs.some((playlistSong) => playlistSong.id === song.id)).map((song) => (
             <View key={song.id} style={styles.membershipRow}><Text style={styles.membershipTitle}>{song.title} · {song.artist}</Text><Pressable accessibilityRole="button" accessibilityLabel={`Add ${song.title} to ${selectedPlaylist.name}`} onPress={() => addToPlaylist(selectedPlaylist.id, toToggleableSong(song))}><Text style={styles.add}>Add</Text></Pressable></View>
           ))}
@@ -97,6 +97,10 @@ export default function LibraryScreen() {
           onSeekForward={() => previewPlayer.seekBy(10)}
           onToggle={previewPlayer.toggle}
           queueLength={previewPlayer.queue.length}
+          lyricLines={previewPlayer.lyricLines}
+          lyricLoading={previewPlayer.lyricLoading}
+          lyricMessage={previewPlayer.lyricMessage}
+          currentSeconds={previewPlayer.currentSeconds}
         />
       </ScrollView>
     </SafeAreaView>

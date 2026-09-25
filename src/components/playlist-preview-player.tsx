@@ -2,6 +2,8 @@ import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { SavedSong } from '../types/song';
+import { SyncedLyrics } from './synced-lyrics';
+import type { TimedLyricLine } from '../lib/synced-lyrics';
 
 type PlaylistPreviewPlayerProps = {
   canNext: boolean;
@@ -16,6 +18,10 @@ type PlaylistPreviewPlayerProps = {
   onSeekForward: () => void;
   onToggle: () => void;
   queueLength: number;
+  lyricLines?: TimedLyricLine[];
+  lyricLoading?: boolean;
+  lyricMessage?: string | null;
+  currentSeconds?: number;
 };
 
 export function PlaylistPreviewPlayer({
@@ -31,6 +37,7 @@ export function PlaylistPreviewPlayer({
   onSeekForward,
   onToggle,
   queueLength,
+  lyricLines = [], lyricLoading = false, lyricMessage = null, currentSeconds = 0,
 }: PlaylistPreviewPlayerProps) {
   if (!currentSong && !message) return null;
 
@@ -54,6 +61,7 @@ export function PlaylistPreviewPlayer({
             <Pressable accessibilityRole="button" accessibilityLabel="Forward 10 seconds" onPress={onSeekForward} style={styles.control}><Text style={styles.controlText}>10 ↻</Text></Pressable>
             <Pressable accessibilityRole="button" accessibilityLabel="Next preview" disabled={!canNext} onPress={onNext} style={[styles.control, !canNext && styles.disabled]}><Text style={styles.controlText}>Next</Text></Pressable>
           </View>
+          <SyncedLyrics lines={lyricLines} currentSeconds={currentSeconds} isLoading={lyricLoading} message={lyricMessage} />
         </>
       )}
       {message && <Text style={styles.message}>{message}</Text>}
