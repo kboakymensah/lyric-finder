@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type { SavedSong } from '../types/song';
+import type { SavedSong, SongResult } from '../types/song';
 import { SyncedLyrics } from './synced-lyrics';
 import type { TimedLyricLine } from '../lib/synced-lyrics';
 
@@ -9,7 +9,7 @@ type PlaylistPreviewPlayerProps = {
   canNext: boolean;
   canPrevious: boolean;
   currentIndex: number;
-  currentSong: SavedSong | null;
+  currentSong: SavedSong | SongResult | null;
   isPlaying: boolean;
   message: string | null;
   onNext: () => void;
