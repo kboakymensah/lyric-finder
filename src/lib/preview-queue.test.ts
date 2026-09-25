@@ -25,8 +25,13 @@ describe('preview queue helpers', () => {
     expect(buildPreviewQueue([playableSong, unavailableSong])).toEqual([playableSong]);
   });
 
+  it('returns an empty queue when every saved song lacks a preview', () => {
+    expect(buildPreviewQueue([unavailableSong])).toEqual([]);
+  });
+
   it('does not move beyond queue boundaries', () => {
     expect(previousQueueIndex(0)).toBe(0);
+    expect(previousQueueIndex(1)).toBe(0);
     expect(nextQueueIndex(2, 3)).toBe(2);
   });
 
