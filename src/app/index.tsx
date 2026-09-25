@@ -4,6 +4,7 @@ import { ActivityIndicator, Linking, Pressable, SafeAreaView, ScrollView, StyleS
 import { validateLyrics } from '../../lib/validation';
 import { fetchWithTimeout } from '../../lib/request';
 import { lyricDestination } from '../../lib/genius-links';
+import { enrichMissingCatalog } from '../lib/itunes-catalog';
 import { listeningUrl } from '../lib/listening-platforms';
 import { SongResults } from '../components/song-results';
 import { useLibrary } from '../contexts/library-context';
@@ -49,7 +50,10 @@ export default function Home() {
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? 'Search is temporarily unavailable.');
-      setSongs(body.results);
+      const results = await Promise.all(
+        (body.results as SongResult[]).map((song) => enrichMissingCatalog(song)),
+      );
+      setSongs(results);
       setHasSearched(true);
     } catch (e) {
       setMessage(e instanceof Error ? e.message : 'Search is temporarily unavailable.');
