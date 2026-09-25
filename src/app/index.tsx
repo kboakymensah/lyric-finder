@@ -4,6 +4,7 @@ import { ActivityIndicator, Linking, Pressable, SafeAreaView, ScrollView, StyleS
 import { validateLyrics } from '../../lib/validation';
 import { fetchWithTimeout } from '../../lib/request';
 import { geniusLyricsUrl } from '../../lib/genius-links';
+import { listeningUrl } from '../lib/listening-platforms';
 import { SongResults } from '../components/song-results';
 import { useLibrary } from '../contexts/library-context';
 import { usePreviewPlayer } from '../hooks/use-preview-player';
@@ -82,7 +83,6 @@ export default function Home() {
           {loading ? <ActivityIndicator color="#0B0B0A" /> : <Text style={s.buttonText}>Find my song</Text>}
         </Pressable>
         <Link href="/explore" style={s.libraryLink}>Open my library</Link>
-        <Link href="/hum-spike" style={s.spikeLink}>Try the humming spike</Link>
 
         <SongResults
           songs={songs}
@@ -99,7 +99,7 @@ export default function Home() {
               'Sorry, Genius did not have these lyrics or its page could not be opened.',
             );
           }}
-          onListen={(song) => openExternal(song.listenUrl, 'Listening is unavailable for this song.')}
+          onListen={(song, platform) => openExternal(listeningUrl(song, platform), 'That music service could not be opened for this song.')}
           onToggleSaved={toggleSong}
           playlists={library.playlists}
           onAddToPlaylist={addToPlaylist}
@@ -132,6 +132,5 @@ const s = StyleSheet.create({
   buttonDisabled: { opacity: 0.65 },
   buttonText: { color: '#0B0B0A', fontWeight: '800', fontSize: 17 },
   libraryLink: { alignSelf: 'center', color: '#F7C948', fontSize: 16, fontWeight: '800', paddingVertical: 4 },
-  spikeLink: { alignSelf: 'center', color: '#BDB6A4', fontSize: 15, fontWeight: '700', paddingVertical: 4 },
   error: { color: '#FFAAA8' },
 });

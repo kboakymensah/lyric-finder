@@ -81,7 +81,7 @@ describe('SongResultCard', () => {
     expect(card!.root.findAllByProps({ accessibilityLabel: 'Preview Hello' })).toHaveLength(0);
   });
 
-  it('shows three distinct result action bars and a top-right liked button', () => {
+  it('shows a platform-neutral listening button and a top-right liked button', () => {
     let card: ReturnType<typeof create>;
     act(() => {
       card = create(
@@ -100,7 +100,7 @@ describe('SongResultCard', () => {
 
     expect(card!.root.findAllByProps({ accessibilityLabel: 'View lyrics for Hello' })).toHaveLength(1);
     expect(card!.root.findAllByProps({ accessibilityLabel: 'Play 30-second preview of Hello' })).toHaveLength(1);
-    expect(card!.root.findAllByProps({ accessibilityLabel: 'Listen to Hello in Apple Music' })).toHaveLength(1);
+    expect(card!.root.findAllByProps({ accessibilityLabel: 'Choose where to listen to Hello' })).toHaveLength(1);
     expect(card!.root.findAllByProps({ accessibilityLabel: 'Add Hello to liked songs' })).toHaveLength(1);
   });
 
@@ -130,7 +130,7 @@ describe('SongResultCard', () => {
     expect(onAddToPlaylist).toHaveBeenCalledWith('road-trip', song);
   });
 
-  it('invokes the visible lyric, listen, and save controls with its song', () => {
+  it('offers Apple Music, Spotify, and SoundCloud after choosing where to listen', () => {
     const onViewLyrics = vi.fn();
     const onListen = vi.fn();
     const onToggleSaved = vi.fn();
@@ -151,11 +151,16 @@ describe('SongResultCard', () => {
     });
 
     act(() => card!.root.findByProps({ accessibilityLabel: 'View lyrics for Hello' }).props.onPress());
-    act(() => card!.root.findByProps({ accessibilityLabel: 'Listen to Hello in Apple Music' }).props.onPress());
+    act(() => card!.root.findByProps({ accessibilityLabel: 'Choose where to listen to Hello' }).props.onPress());
+    expect(card!.root.findAllByProps({ accessibilityLabel: 'Listen to Hello on Apple Music' })).toHaveLength(1);
+    expect(card!.root.findAllByProps({ accessibilityLabel: 'Listen to Hello on Spotify' })).toHaveLength(1);
+    expect(card!.root.findAllByProps({ accessibilityLabel: 'Listen to Hello on SoundCloud' })).toHaveLength(1);
+    expect(card!.root.findAllByProps({ accessibilityLabel: 'Listen to Hello on Search the web' })).toHaveLength(1);
+    act(() => card!.root.findByProps({ accessibilityLabel: 'Listen to Hello on Spotify' }).props.onPress());
     act(() => card!.root.findByProps({ accessibilityLabel: 'Add Hello to liked songs' }).props.onPress());
 
     expect(onViewLyrics).toHaveBeenCalledWith(song);
-    expect(onListen).toHaveBeenCalledWith(song);
+    expect(onListen).toHaveBeenCalledWith(song, 'spotify');
     expect(onToggleSaved).toHaveBeenCalledWith(song);
   });
 
@@ -283,11 +288,12 @@ describe('SongResults', () => {
     });
 
     act(() => results!.root.findByProps({ accessibilityLabel: 'View lyrics for Hello' }).props.onPress());
-    act(() => results!.root.findByProps({ accessibilityLabel: 'Listen to Rolling in the Deep in Apple Music' }).props.onPress());
+    act(() => results!.root.findByProps({ accessibilityLabel: 'Choose where to listen to Rolling in the Deep' }).props.onPress());
+    act(() => results!.root.findByProps({ accessibilityLabel: 'Listen to Rolling in the Deep on Apple Music' }).props.onPress());
     act(() => results!.root.findByProps({ accessibilityLabel: 'Remove Rolling in the Deep from liked songs' }).props.onPress());
 
     expect(onViewLyrics).toHaveBeenCalledWith(song);
-    expect(onListen).toHaveBeenCalledWith(alternative);
+    expect(onListen).toHaveBeenCalledWith(alternative, 'appleMusic');
     expect(onToggleSaved).toHaveBeenCalledWith(alternative);
   });
 });

@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import type { Playlist } from '../lib/library';
+import type { ListeningPlatform } from '../lib/listening-platforms';
 import { SongResultCard } from './song-result-card';
 import type { SongResult } from '../types/song';
 
@@ -11,7 +12,7 @@ type SongResultsProps = {
   onTogglePreview: (song: SongResult) => void;
   isSaved?: (songId: string) => boolean;
   onViewLyrics?: (song: SongResult) => void;
-  onListen?: (song: SongResult) => void;
+  onListen?: (song: SongResult, platform: ListeningPlatform) => void;
   onToggleSaved?: (song: SongResult) => void;
   playlists?: Playlist[];
   onAddToPlaylist?: (playlistId: string, song: SongResult) => void;

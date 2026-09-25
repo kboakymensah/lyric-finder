@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Playlist } from '../lib/library';
+import type { ListeningPlatform } from '../lib/listening-platforms';
 import type { SongResult } from '../types/song';
 
 type SongResultCardProps = {
@@ -12,7 +13,7 @@ type SongResultCardProps = {
   isSaved: boolean;
   onTogglePreview: () => void;
   onViewLyrics: (song: SongResult) => void;
-  onListen: (song: SongResult) => void;
+  onListen: (song: SongResult, platform: ListeningPlatform) => void;
   onToggleSaved: (song: SongResult) => void;
   playlists?: Playlist[];
   onAddToPlaylist?: (playlistId: string, song: SongResult) => void;
@@ -31,6 +32,7 @@ export function SongResultCard({
   onAddToPlaylist = () => {},
 }: SongResultCardProps) {
   const [showPlaylistPicker, setShowPlaylistPicker] = useState(false);
+  const [showListeningPicker, setShowListeningPicker] = useState(false);
   const [playlistAdded, setPlaylistAdded] = useState(false);
   const playlistHighlight = useRef(new Animated.Value(0)).current;
   const previewLabel = `${isPlaying ? 'Pause' : 'Play 30-second preview of'} ${song.title}`;
@@ -92,9 +94,36 @@ export function SongResultCard({
               <Text style={styles.actionText}>{isPlaying ? 'Pause Preview' : 'Play 30-second Preview'}</Text>
             </Pressable>
           )}
-          <Pressable accessibilityRole="button" accessibilityLabel={`Listen to ${song.title} in Apple Music`} onPress={() => onListen(song)} style={[styles.actionBar, styles.listenBar]}>
-            <Text style={[styles.actionText, styles.listenText]}>Listen in Apple Music</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Choose where to listen to ${song.title}`}
+            onPress={() => setShowListeningPicker((isOpen) => !isOpen)}
+            style={[styles.actionBar, styles.listenBar]}>
+            <Text style={[styles.actionText, styles.listenText]}>Listen on…</Text>
           </Pressable>
+          {showListeningPicker && (
+            <View style={styles.listeningPicker}>
+              <Text style={styles.pickerHint}>Choose a music service</Text>
+              {([
+                ['appleMusic', 'Apple Music'],
+                ['spotify', 'Spotify'],
+                ['soundcloud', 'SoundCloud'],
+                ['webSearch', 'Search the web'],
+              ] as const).map(([platform, label]) => (
+                <Pressable
+                  key={platform}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Listen to ${song.title} on ${label}`}
+                  onPress={() => {
+                    setShowListeningPicker(false);
+                    onListen(song, platform);
+                  }}
+                  style={styles.listeningChoice}>
+                  <Text style={styles.listeningChoiceText}>{label}</Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
           <Animated.View style={[styles.actionBar, styles.playlistBar, { backgroundColor: playlistBarColor }]}>
             <Pressable
               accessibilityRole="button"
@@ -221,6 +250,23 @@ const styles = StyleSheet.create({
   },
   listenText: {
     color: '#F7C948',
+  },
+  listeningPicker: {
+    backgroundColor: '#0B0B0A',
+    borderColor: '#F7C948',
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 6,
+    padding: 8,
+  },
+  listeningChoice: {
+    backgroundColor: '#302B1B',
+    borderRadius: 8,
+    padding: 10,
+  },
+  listeningChoiceText: {
+    color: '#FFF7DF',
+    fontWeight: '700',
   },
   saveButton: {
     alignItems: 'center',
