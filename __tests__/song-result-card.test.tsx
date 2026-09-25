@@ -61,7 +61,7 @@ describe('SongResultCard', () => {
     expect(text).toContain('“Hello from the other side”');
   });
 
-  it('shows Preview only when a preview URL is available', () => {
+  it('keeps a disabled preview bar visible when a preview URL is unavailable', () => {
     let card: ReturnType<typeof create>;
     act(() => {
       card = create(
@@ -78,7 +78,8 @@ describe('SongResultCard', () => {
       );
     });
 
-    expect(card!.root.findAllByProps({ accessibilityLabel: 'Preview Hello' })).toHaveLength(0);
+    const unavailablePreview = card!.root.findByProps({ accessibilityLabel: 'Preview unavailable for Hello' });
+    expect(unavailablePreview.props.disabled).toBe(true);
   });
 
   it('shows a platform-neutral listening button and a top-right liked button', () => {

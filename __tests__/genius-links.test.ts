@@ -1,18 +1,24 @@
 import { describe, expect, it } from 'vitest';
 
-import { geniusLyricsUrl } from '../lib/genius-links';
+import { lyricDestination } from '../lib/genius-links';
 
-describe('geniusLyricsUrl', () => {
-  it('uses the direct Genius lyrics page when the search result includes one', () => {
-    expect(geniusLyricsUrl({
+describe('lyricDestination', () => {
+  it('uses the direct Genius lyrics page without an unavailable warning when the result includes one', () => {
+    expect(lyricDestination({
       title: 'Hello',
       artist: 'Adele',
       lyricsUrl: 'https://genius.com/Adele-hello-lyrics',
-    })).toBe('https://genius.com/Adele-hello-lyrics');
+    }, 'hello from the other side')).toEqual({
+      url: 'https://genius.com/Adele-hello-lyrics',
+      geniusUnavailable: false,
+    });
   });
 
-  it('falls back to a Genius search for results without a direct lyrics page', () => {
-    expect(geniusLyricsUrl({ title: 'Hello', artist: 'Adele', lyricsUrl: null }))
-      .toBe('https://genius.com/search?q=Hello%20Adele');
+  it('falls back to a Google lyric search only when Genius has no direct page', () => {
+    expect(lyricDestination({ title: 'Hello', artist: 'Adele', lyricsUrl: null }, 'hello from the other side'))
+      .toEqual({
+        url: 'https://www.google.com/search?q=hello%20from%20the%20other%20side%20lyrics',
+        geniusUnavailable: true,
+      });
   });
 });

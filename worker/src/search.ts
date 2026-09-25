@@ -31,15 +31,24 @@ function snippet(lyrics?: string | null) {
   return lyrics?.split('\n').find((line) => line.trim())?.trim().slice(0, 160) ?? null;
 }
 
+function normalizeCatalogText(value: string) {
+  return value.toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+}
+
 async function enrichWithITunes(trackName: string, artistName: string, fetcher: Fetcher) {
   const catalogUrl = new URL('https://itunes.apple.com/search');
   catalogUrl.searchParams.set('term', `${trackName} ${artistName}`);
   catalogUrl.searchParams.set('entity', 'song');
-  catalogUrl.searchParams.set('limit', '1');
+  catalogUrl.searchParams.set('limit', '5');
   try {
     const catalogResponse = await fetcher(catalogUrl);
     if (!catalogResponse.ok) return undefined;
-    return ((await catalogResponse.json() as { results?: CatalogTrack[] }).results ?? [])[0];
+    const tracks = (await catalogResponse.json() as { results?: CatalogTrack[] }).results ?? [];
+    const normalizedTitle = normalizeCatalogText(trackName);
+    const normalizedArtist = normalizeCatalogText(artistName);
+    return tracks.find((track) =>
+      normalizeCatalogText(track.trackName) === normalizedTitle && normalizeCatalogText(track.artistName) === normalizedArtist,
+    );
   } catch {
     return undefined;
   }

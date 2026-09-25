@@ -3,7 +3,7 @@ import { Link } from 'expo-router';
 import { ActivityIndicator, Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { validateLyrics } from '../../lib/validation';
 import { fetchWithTimeout } from '../../lib/request';
-import { geniusLyricsUrl } from '../../lib/genius-links';
+import { lyricDestination } from '../../lib/genius-links';
 import { listeningUrl } from '../lib/listening-platforms';
 import { SongResults } from '../components/song-results';
 import { useLibrary } from '../contexts/library-context';
@@ -91,13 +91,11 @@ export default function Home() {
           onTogglePreview={togglePreview}
           isSaved={isLiked}
           onViewLyrics={(song) => {
-            if (!song.lyricsUrl) {
-              setMessage('Sorry, Genius did not have a direct lyrics page for this song. We opened a Genius search instead.');
+            const destination = lyricDestination(song, lyrics);
+            if (destination.geniusUnavailable) {
+              setMessage('Sorry, Genius did not have a direct lyrics page for this song. We opened a Google lyric search instead.');
             }
-            return openExternal(
-              geniusLyricsUrl(song),
-              'Sorry, Genius did not have these lyrics or its page could not be opened.',
-            );
+            return openExternal(destination.url, 'Sorry, the lyrics page or search could not be opened.');
           }}
           onListen={(song, platform) => openExternal(listeningUrl(song, platform), 'That music service could not be opened for this song.')}
           onToggleSaved={toggleSong}

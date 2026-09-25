@@ -89,9 +89,17 @@ export function SongResultCard({
             style={[styles.actionBar, styles.lyricsBar]}>
             <Text style={styles.actionText}>View Lyrics</Text>
           </Pressable>
-          {song.previewUrl && (
+          {song.previewUrl ? (
             <Pressable accessibilityRole="button" accessibilityLabel={previewLabel} onPress={onTogglePreview} style={[styles.actionBar, styles.previewBar]}>
               <Text style={styles.actionText}>{isPlaying ? 'Pause Preview' : 'Play 30-second Preview'}</Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Preview unavailable for ${song.title}`}
+              disabled
+              style={[styles.actionBar, styles.previewBar, styles.previewUnavailable]}>
+              <Text style={[styles.actionText, styles.previewUnavailableText]}>Preview unavailable</Text>
             </Pressable>
           )}
           <Pressable
@@ -231,6 +239,14 @@ const styles = StyleSheet.create({
   },
   previewBar: {
     backgroundColor: '#F7C948',
+  },
+  previewUnavailable: {
+    backgroundColor: '#302B1B',
+    borderColor: '#5E5744',
+    borderWidth: 1,
+  },
+  previewUnavailableText: {
+    color: '#BDB6A4',
   },
   listenBar: {
     borderColor: '#F7C948',

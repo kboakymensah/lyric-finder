@@ -4,5 +4,11 @@ type LyricsResult = {
   lyricsUrl: string | null;
 };
 
-export const geniusLyricsUrl = (song: LyricsResult): string =>
-  song.lyricsUrl ?? `https://genius.com/search?q=${encodeURIComponent(`${song.title} ${song.artist}`)}`;
+export function lyricDestination(song: LyricsResult, originalLyrics: string) {
+  if (song.lyricsUrl) return { url: song.lyricsUrl, geniusUnavailable: false };
+
+  return {
+    url: `https://www.google.com/search?q=${encodeURIComponent(`${originalLyrics} lyrics`)}`,
+    geniusUnavailable: true,
+  };
+}

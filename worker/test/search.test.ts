@@ -58,6 +58,27 @@ describe('searchSongs', () => {
     ]);
   });
 
+  it('chooses the exact iTunes title and artist match instead of the first catalog result', async () => {
+    const fetcher: Fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(input instanceof Request ? input.url : String(input));
+      if (url.hostname === 'api.genius.com') return new Response(JSON.stringify({ response: { hits: [{ result: {
+        id: 987, title: 'Hello', primary_artist: { name: 'Adele' }, url: 'https://genius.com/Adele-hello-lyrics',
+      } }] } }));
+      if (url.hostname === 'itunes.apple.com') return new Response(JSON.stringify({ results: [
+        { trackId: 1, trackName: 'Hello', artistName: 'Lionel Richie', previewUrl: 'https://preview.example/wrong', trackViewUrl: 'https://music.apple.com/wrong' },
+        { trackId: 2, trackName: 'Hello', artistName: 'Adele', previewUrl: 'https://preview.example/adele', trackViewUrl: 'https://music.apple.com/adele-hello' },
+      ] }));
+      throw new Error(`Unexpected request to ${url.hostname}`);
+    });
+
+    const results = await searchSongs('hello from the other side', fetcher, { geniusAccessToken: 'test-token' });
+
+    expect(results[0]).toMatchObject({
+      previewUrl: 'https://preview.example/adele',
+      listenUrl: 'https://music.apple.com/adele-hello',
+    });
+  });
+
   it('falls back to LRCLIB when Genius has no lyric hits', async () => {
     const fetcher: Fetcher = vi.fn(async (input: RequestInfo | URL) => {
       const url = new URL(input instanceof Request ? input.url : String(input));
