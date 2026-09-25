@@ -13,6 +13,7 @@ const { player, status } = vi.hoisted(() => ({
     pause: vi.fn(),
     play: vi.fn(),
     replace: vi.fn(),
+    seekTo: vi.fn(),
   },
   status: {
     currentTime: 5,
@@ -45,6 +46,7 @@ describe('usePlaylistPreviewPlayer', () => {
     player.pause.mockReset();
     player.play.mockReset();
     player.replace.mockReset();
+    player.seekTo.mockReset();
     status.currentTime = 5;
     status.didJustFinish = false;
     status.duration = 30;
@@ -120,5 +122,29 @@ describe('usePlaylistPreviewPlayer', () => {
     });
 
     expect(previewPlayer!.currentSong).toEqual(secondSong);
+  });
+
+  it('seeks forward before Expo has reported the preview duration', async () => {
+    player.currentTime = 5;
+    player.duration = 0;
+    status.duration = 0;
+    let previewPlayer: ReturnType<typeof usePlaylistPreviewPlayer> | undefined;
+    const Consumer = () => {
+      previewPlayer = usePlaylistPreviewPlayer();
+      return null;
+    };
+
+    act(() => {
+      create(<Consumer />);
+    });
+    act(() => {
+      previewPlayer!.start([playableSong]);
+    });
+
+    await act(async () => {
+      await previewPlayer!.seekBy(10);
+    });
+
+    expect(player.seekTo).toHaveBeenCalledWith(15);
   });
 });

@@ -80,12 +80,12 @@ export function usePlaylistPreviewPlayer() {
     playSong(queue[previousIndex]);
   }
 
-  function seekBy(deltaSeconds: number) {
+  async function seekBy(deltaSeconds: number) {
     if (!currentSong) return;
 
     try {
-      const duration = status.duration || player.duration || 0;
-      player.currentTime = clampPreviewSeek(player.currentTime + deltaSeconds, duration);
+      const duration = status.duration || player.duration || 30;
+      await player.seekTo(clampPreviewSeek(player.currentTime + deltaSeconds, duration));
     } catch {
       setMessage(playbackError);
     }
