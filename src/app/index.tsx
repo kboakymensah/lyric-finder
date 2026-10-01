@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useEffect, useState } from 'react';
 import { Link } from 'expo-router';
 import { ActivityIndicator, Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { validateLyrics } from '../../lib/validation';
@@ -6,6 +7,7 @@ import { fetchWithTimeout } from '../../lib/request';
 import { lyricDestination } from '../../lib/genius-links';
 import { enrichMissingCatalog } from '../lib/itunes-catalog';
 import { listeningUrl } from '../lib/listening-platforms';
+import { addRecentSearch, parseRecentSearches, removeRecentSearch } from '../lib/recent-searches';
 import { SongResults } from '../components/song-results';
 import { PlaylistPreviewPlayer } from '../components/playlist-preview-player';
 import { useLibrary } from '../contexts/library-context';
@@ -14,12 +16,29 @@ import type { SongResult } from '../types/song';
 
 export default function Home() {
   const [lyrics, setLyrics] = useState('');
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [songs, setSongs] = useState<SongResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const previewPlayer = usePreviewPlayer();
   const { addToPlaylist, data: library, error: libraryError, isLiked, toggleSong } = useLibrary();
+
+  useEffect(() => {
+    void AsyncStorage.getItem('@lyric-finder/recent-searches-v1').then((stored) => setRecentSearches(stored ? parseRecentSearches(stored) : [])).catch(() => setRecentSearches([]));
+  }, []);
+
+  function saveRecentSearch(query: string) {
+    const next = addRecentSearch(recentSearches, query);
+    setRecentSearches(next);
+    void AsyncStorage.setItem('@lyric-finder/recent-searches-v1', JSON.stringify(next));
+  }
+
+  function deleteRecentSearch(query: string) {
+    const next = removeRecentSearch(recentSearches, query);
+    setRecentSearches(next);
+    void AsyncStorage.setItem('@lyric-finder/recent-searches-v1', JSON.stringify(next));
+  }
 
   async function openExternal(url: string | null, unavailableMessage: string) {
     if (!url) return setMessage(unavailableMessage);
@@ -32,8 +51,8 @@ export default function Home() {
     }
   }
 
-  async function search() {
-    const error = validateLyrics(lyrics);
+  async function search(query = lyrics) {
+    const error = validateLyrics(query);
     if (error) return setMessage(error);
     const base = process.env.EXPO_PUBLIC_API_BASE_URL;
     if (!base || base.includes('example.workers.dev')) return setMessage('Add your live-search API URL to .env first.');
@@ -47,7 +66,7 @@ export default function Home() {
       const response = await fetchWithTimeout(`${base}/search`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ lyrics }),
+        body: JSON.stringify({ lyrics: query }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? 'Search is temporarily unavailable.');
@@ -56,6 +75,7 @@ export default function Home() {
       );
       setSongs(results);
       setHasSearched(true);
+      saveRecentSearch(query);
     } catch (e) {
       setMessage(e instanceof Error ? e.message : 'Search is temporarily unavailable.');
     } finally {
@@ -82,9 +102,16 @@ export default function Home() {
           style={s.input}
           value={lyrics}
         />
+        {recentSearches.length > 0 && <View style={s.recentSection}>
+          <Text style={s.recentHeading}>RECENT SEARCHES</Text>
+          {recentSearches.map((query) => <View key={query} style={s.recentRow}>
+            <Pressable accessibilityRole="button" accessibilityLabel={`Search again for ${query}`} onPress={() => { setLyrics(query); void search(query); }} style={s.recentSearch}><Text numberOfLines={1} style={s.recentText}>{query}</Text></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel={`Remove recent search ${query}`} onPress={() => deleteRecentSearch(query)}><Text style={s.removeRecent}>×</Text></Pressable>
+          </View>)}
+        </View>}
         {message && <Text style={s.error}>{message}</Text>}
         {libraryError && <Text style={s.error}>{libraryError}</Text>}
-        <Pressable accessibilityRole="button" disabled={loading} onPress={search} style={[s.button, loading && s.buttonDisabled]}>
+        <Pressable accessibilityRole="button" disabled={loading} onPress={() => { void search(); }} style={[s.button, loading && s.buttonDisabled]}>
           {loading ? <ActivityIndicator color="#0B0B0A" /> : <Text style={s.buttonText}>Find my song</Text>}
         </Pressable>
         <Link href="/explore" style={s.libraryLink}>Open my library</Link>
@@ -154,4 +181,10 @@ const s = StyleSheet.create({
   buttonText: { color: '#0B0B0A', fontWeight: '800', fontSize: 17 },
   libraryLink: { alignSelf: 'center', color: '#F7C948', fontSize: 16, fontWeight: '800', paddingVertical: 4 },
   error: { color: '#FFAAA8' },
+  recentSection: { backgroundColor: '#181714', borderColor: '#3B372C', borderRadius: 14, borderWidth: 1, gap: 8, padding: 14 },
+  recentHeading: { color: '#F7C948', fontSize: 12, fontWeight: '800', letterSpacing: 1.2 },
+  recentRow: { alignItems: 'center', borderTopColor: '#3B372C', borderTopWidth: 1, flexDirection: 'row', gap: 10, paddingTop: 9 },
+  recentSearch: { flex: 1 },
+  recentText: { color: '#FFF7DF' },
+  removeRecent: { color: '#FFAAA8', fontSize: 23, fontWeight: '700', lineHeight: 23, paddingHorizontal: 5 },
 });
