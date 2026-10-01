@@ -140,6 +140,7 @@ export default function Home() {
           currentIndex={previewPlayer.currentIndex}
           currentSong={previewPlayer.currentSong}
           currentSeconds={previewPlayer.currentSeconds}
+          durationSeconds={previewPlayer.durationSeconds}
           isPlaying={previewPlayer.isPlaying}
           lyricLines={previewPlayer.lyricLines}
           lyricLoading={previewPlayer.lyricLoading}

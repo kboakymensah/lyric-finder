@@ -14,5 +14,6 @@ describe('PreviewPlayerProvider', () => {
     act(() => { create(<PreviewPlayerProvider><Consumer /></PreviewPlayerProvider>); });
     act(() => player!.startSong(song));
     expect(player!.currentSong).toEqual(song);
+    expect(player!.durationSeconds).toBe(30);
   });
 });

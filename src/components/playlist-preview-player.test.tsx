@@ -3,7 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('expo-image', () => ({ Image: 'Image' }));
 vi.mock('react-native', () => ({
+  Modal: 'Modal',
   Pressable: 'Pressable',
+  SafeAreaView: 'SafeAreaView',
   ScrollView: 'ScrollView',
   StyleSheet: { create: <T,>(styles: T) => styles },
   Text: 'Text',
@@ -72,5 +74,32 @@ describe('PlaylistPreviewPlayer', () => {
 
     const text = player!.root.findAll((node) => String(node.type) === 'Text').map((node) => node.children.join(''));
     expect(text).toContain('Playback could not start. Please try another preview.');
+  });
+
+  it('shows preview timing and icon playback controls', () => {
+    let player: ReturnType<typeof create>;
+    act(() => {
+      player = create(
+        <PlaylistPreviewPlayer
+          canNext={true}
+          canPrevious={true}
+          currentIndex={0}
+          currentSeconds={10}
+          currentSong={song}
+          durationSeconds={30}
+          isPlaying={false}
+          message={null}
+          queueLength={2}
+          {...callbacks}
+        />,
+      );
+    });
+
+    const text = player!.root.findAll((node) => String(node.type) === 'Text').map((node) => node.children.join(''));
+    expect(text).toContain('0:10');
+    expect(text).toContain('−0:20');
+    expect(text).toContain('▶');
+    expect(text).toContain('⏪');
+    expect(text).toContain('⏩');
   });
 });
