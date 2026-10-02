@@ -1,5 +1,13 @@
 # Changelog
 
+## Prototype 4 — Library and player upgrade
+
+- Added persistent Favorites separate from Liked Songs. Favoriting automatically likes a song; adding a song to a playlist automatically likes it too.
+- Added Play All and Shuffle for both Liked Songs and Favorites, plus repeat-all, repeat-one, shuffle, and play-once queue modes in Now Playing.
+- Updated Now Playing with continuous preview-queue playback, scrolling synchronized lyrics, a yellow filled favorite indicator, and related playable song suggestions.
+- The search keyboard now dismisses when the user presses Done/Search.
+- In-app playback remains limited to the available 30-second public-catalog preview. Full songs open in the listener's selected music service.
+
 ## Prototype 2
 
 - Lyrics, preview, and full listening are separate experiences.
