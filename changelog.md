@@ -1,5 +1,12 @@
 # Changelog
 
+## Preview reliability update
+
+- Kept iTunes as the first catalog source and added a verified Deezer fallback for missing 30-second previews. The fallback only accepts an exact title with the requested artist listed as a contributor, so it does not substitute a different song.
+- Replaced manual end-of-preview handling with Expo Audio's native playlist queue for reliable continuous playback, previous/next controls, repeat modes, and shuffled queue order.
+- Moved the mini player to the root of the app. Tapping its artwork/title opens Now Playing; its play, previous, and next buttons now work independently without forcing the full screen open.
+- Lyrics remain visible during public preview playback, but are no longer falsely highlighted as if the excerpt had a verified full-song timestamp offset.
+
 ## Prototype 4 — Library and player upgrade
 
 - Added persistent Favorites separate from Liked Songs. Favoriting automatically likes a song; adding a song to a playlist automatically likes it too.
