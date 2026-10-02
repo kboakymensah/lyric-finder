@@ -39,6 +39,12 @@ function normalizeCatalogTitle(value: string) {
   return normalizeCatalogText(value.replace(/\s*\([^)]*\)/g, ''));
 }
 
+function isCompatibleCatalogArtist(catalogArtist: string, songArtist: string) {
+  const catalog = normalizeCatalogText(catalogArtist);
+  const song = normalizeCatalogText(songArtist);
+  return catalog === song || catalog.startsWith(`${song} `) || catalog.endsWith(` ${song}`);
+}
+
 async function enrichWithITunes(trackName: string, artistName: string, fetcher: Fetcher) {
   const catalogUrl = new URL('https://itunes.apple.com/search');
   catalogUrl.searchParams.set('term', `${trackName} ${artistName}`);
@@ -51,7 +57,7 @@ async function enrichWithITunes(trackName: string, artistName: string, fetcher: 
     const normalizedTitle = normalizeCatalogTitle(trackName);
     const normalizedArtist = normalizeCatalogText(artistName);
     return tracks.find((track) =>
-      normalizeCatalogTitle(track.trackName) === normalizedTitle && normalizeCatalogText(track.artistName) === normalizedArtist,
+      normalizeCatalogTitle(track.trackName) === normalizedTitle && isCompatibleCatalogArtist(track.artistName, normalizedArtist),
     );
   } catch {
     return undefined;

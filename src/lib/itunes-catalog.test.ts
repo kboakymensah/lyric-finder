@@ -43,4 +43,19 @@ describe('enrichMissingCatalog', () => {
     await expect(enrichMissingCatalog(completeSong, fetcher)).resolves.toEqual(completeSong);
     expect(fetcher).not.toHaveBeenCalled();
   });
+
+  it('uses a safe catalog match when iTunes adds a featured artist credit', async () => {
+    const fetcher = vi.fn(async () => new Response(JSON.stringify({ results: [{
+      trackName: 'We Found Love',
+      artistName: 'Rihanna & Calvin Harris',
+      artworkUrl100: 'https://itunes.example/rihanna.jpg',
+      previewUrl: 'https://itunes.example/rihanna.m4a',
+      trackViewUrl: 'https://music.apple.com/us/album/we-found-love/1?i=2',
+    }] })));
+
+    await expect(enrichMissingCatalog({ ...song, title: 'We Found Love (feat. Calvin Harris)', artist: 'Rihanna' }, fetcher)).resolves.toMatchObject({
+      previewUrl: 'https://itunes.example/rihanna.m4a',
+      listenUrl: 'https://music.apple.com/us/album/we-found-love/1?i=2',
+    });
+  });
 });
