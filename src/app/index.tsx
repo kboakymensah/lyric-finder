@@ -9,7 +9,6 @@ import { enrichMissingCatalog } from '../lib/itunes-catalog';
 import { listeningUrl } from '../lib/listening-platforms';
 import { addRecentSearch, parseRecentSearches, removeRecentSearch } from '../lib/recent-searches';
 import { SongResults } from '../components/song-results';
-import { PlaylistPreviewPlayer } from '../components/playlist-preview-player';
 import { useLibrary } from '../contexts/library-context';
 import { usePreviewPlayer } from '../contexts/preview-player-context';
 import type { SongResult } from '../types/song';
@@ -137,32 +136,6 @@ export default function Home() {
           onToggleFavorite={toggleFavorite}
           playlists={library.playlists}
           onAddToPlaylist={addToPlaylist}
-        />
-        <PlaylistPreviewPlayer
-          canNext={previewPlayer.canNext}
-          canPrevious={previewPlayer.canPrevious}
-          currentIndex={previewPlayer.currentIndex}
-          currentSong={previewPlayer.currentSong}
-          currentSeconds={previewPlayer.currentSeconds}
-          durationSeconds={previewPlayer.durationSeconds}
-          relatedSongs={previewPlayer.relatedSongs}
-          relatedLoading={previewPlayer.relatedLoading}
-          onPlayRelated={previewPlayer.startSong}
-          isFavorite={previewPlayer.currentSong ? isFavorite(previewPlayer.currentSong.id) : false}
-          onToggleFavorite={toggleFavorite}
-          isPlaying={previewPlayer.isPlaying}
-          lyricLines={previewPlayer.lyricLines}
-          lyricLoading={previewPlayer.lyricLoading}
-          lyricMessage={previewPlayer.lyricMessage}
-          message={previewPlayer.message}
-          onNext={previewPlayer.next}
-          onPrevious={previewPlayer.previous}
-          onSeekBack={() => previewPlayer.seekBy(-10)}
-          onSeekForward={() => previewPlayer.seekBy(10)}
-          onToggle={previewPlayer.toggle}
-          onChangePlaybackMode={previewPlayer.cyclePlaybackMode}
-          playbackMode={previewPlayer.playbackMode}
-          queueLength={previewPlayer.queue.length || (previewPlayer.currentSong ? 1 : 0)}
         />
       </ScrollView>
     </SafeAreaView>

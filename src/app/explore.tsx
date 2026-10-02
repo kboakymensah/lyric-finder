@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useLibrary } from '../contexts/library-context';
-import { PlaylistPreviewPlayer } from '../components/playlist-preview-player';
 import { usePreviewPlayer } from '../contexts/preview-player-context';
 import type { SavedSong } from '../types/song';
 
@@ -91,32 +90,6 @@ export default function LibraryScreen() {
           ))}
         </View>}
 
-        <PlaylistPreviewPlayer
-          canNext={previewPlayer.canNext}
-          canPrevious={previewPlayer.canPrevious}
-          currentIndex={previewPlayer.currentIndex}
-          currentSong={previewPlayer.currentSong}
-          isPlaying={previewPlayer.isPlaying}
-          message={previewPlayer.message}
-          onNext={previewPlayer.next}
-          onPrevious={previewPlayer.previous}
-          onSeekBack={() => previewPlayer.seekBy(-10)}
-          onSeekForward={() => previewPlayer.seekBy(10)}
-          onToggle={previewPlayer.toggle}
-          onChangePlaybackMode={previewPlayer.cyclePlaybackMode}
-          playbackMode={previewPlayer.playbackMode}
-          queueLength={previewPlayer.queue.length}
-          lyricLines={previewPlayer.lyricLines}
-          lyricLoading={previewPlayer.lyricLoading}
-          lyricMessage={previewPlayer.lyricMessage}
-          currentSeconds={previewPlayer.currentSeconds}
-          durationSeconds={previewPlayer.durationSeconds}
-          relatedSongs={previewPlayer.relatedSongs}
-          relatedLoading={previewPlayer.relatedLoading}
-          onPlayRelated={previewPlayer.startSong}
-          isFavorite={previewPlayer.currentSong ? isFavorite(previewPlayer.currentSong.id) : false}
-          onToggleFavorite={toggleFavorite}
-        />
       </ScrollView>
     </SafeAreaView>
   );
