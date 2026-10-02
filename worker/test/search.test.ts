@@ -99,6 +99,26 @@ describe('searchSongs', () => {
     });
   });
 
+  it('accepts a safe iTunes artist match when the catalog adds a featured artist credit', async () => {
+    const fetcher: Fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(input instanceof Request ? input.url : String(input));
+      if (url.hostname === 'api.genius.com') return new Response(JSON.stringify({ response: { hits: [{ result: {
+        id: 111, title: 'We Found Love (feat. Calvin Harris)', primary_artist: { name: 'Rihanna' }, url: 'https://genius.com/Rihanna-we-found-love-lyrics',
+      } }] } }));
+      if (url.hostname === 'itunes.apple.com') return new Response(JSON.stringify({ results: [{
+        trackId: 2, trackName: 'We Found Love', artistName: 'Rihanna & Calvin Harris', previewUrl: 'https://preview.example/rihanna', trackViewUrl: 'https://music.apple.com/rihanna-we-found-love',
+      }] }));
+      throw new Error(`Unexpected request to ${url.hostname}`);
+    });
+
+    const results = await searchSongs('we found love in a hopeless place', fetcher, { geniusAccessToken: 'test-token' });
+
+    expect(results[0]).toMatchObject({
+      previewUrl: 'https://preview.example/rihanna',
+      listenUrl: 'https://music.apple.com/rihanna-we-found-love',
+    });
+  });
+
   it('falls back to LRCLIB when Genius has no lyric hits', async () => {
     const fetcher: Fetcher = vi.fn(async (input: RequestInfo | URL) => {
       const url = new URL(input instanceof Request ? input.url : String(input));

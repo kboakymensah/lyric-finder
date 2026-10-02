@@ -26,6 +26,12 @@ function normalizeTitle(value: string) {
   return normalizeText(value.replace(/\s*\([^)]*\)/g, ''));
 }
 
+function isCompatibleArtist(catalogArtist: string, songArtist: string) {
+  const catalog = normalizeText(catalogArtist);
+  const song = normalizeText(songArtist);
+  return catalog === song || catalog.startsWith(`${song} `) || catalog.endsWith(` ${song}`);
+}
+
 function isComplete(song: SongResult) {
   return Boolean(song.previewUrl && song.listenUrl.includes('music.apple.com'));
 }
@@ -50,7 +56,7 @@ export async function enrichMissingCatalog(
       track.trackName
       && track.artistName
       && normalizeTitle(track.trackName) === normalizeTitle(song.title)
-      && normalizeText(track.artistName) === normalizeText(song.artist));
+      && isCompatibleArtist(track.artistName, song.artist));
 
     if (!match) return song;
 
