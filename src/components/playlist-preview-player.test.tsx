@@ -102,4 +102,29 @@ describe('PlaylistPreviewPlayer', () => {
     expect(text).toContain('⏪');
     expect(text).toContain('⏩');
   });
+
+  it('shows and toggles the filled favorite star in Now Playing', () => {
+    const onToggleFavorite = vi.fn();
+    let player: ReturnType<typeof create>;
+    act(() => {
+      player = create(
+        <PlaylistPreviewPlayer
+          canNext={false}
+          canPrevious={false}
+          currentIndex={0}
+          currentSong={song}
+          isFavorite
+          isPlaying={false}
+          message={null}
+          onToggleFavorite={onToggleFavorite}
+          queueLength={1}
+          {...callbacks}
+        />,
+      );
+    });
+
+    const favorite = player!.root.findByProps({ accessibilityLabel: `Remove ${song.title} from favorites` });
+    act(() => favorite.props.onPress());
+    expect(onToggleFavorite).toHaveBeenCalledWith(expect.objectContaining({ id: song.id, title: song.title }));
+  });
 });

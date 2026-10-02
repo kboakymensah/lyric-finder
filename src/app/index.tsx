@@ -148,6 +148,8 @@ export default function Home() {
           relatedSongs={previewPlayer.relatedSongs}
           relatedLoading={previewPlayer.relatedLoading}
           onPlayRelated={previewPlayer.startSong}
+          isFavorite={previewPlayer.currentSong ? isFavorite(previewPlayer.currentSong.id) : false}
+          onToggleFavorite={toggleFavorite}
           isPlaying={previewPlayer.isPlaying}
           lyricLines={previewPlayer.lyricLines}
           lyricLoading={previewPlayer.lyricLoading}

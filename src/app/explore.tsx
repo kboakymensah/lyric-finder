@@ -114,6 +114,8 @@ export default function LibraryScreen() {
           relatedSongs={previewPlayer.relatedSongs}
           relatedLoading={previewPlayer.relatedLoading}
           onPlayRelated={previewPlayer.startSong}
+          isFavorite={previewPlayer.currentSong ? isFavorite(previewPlayer.currentSong.id) : false}
+          onToggleFavorite={toggleFavorite}
         />
       </ScrollView>
     </SafeAreaView>
