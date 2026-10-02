@@ -151,6 +151,8 @@ export default function Home() {
           onSeekBack={() => previewPlayer.seekBy(-10)}
           onSeekForward={() => previewPlayer.seekBy(10)}
           onToggle={previewPlayer.toggle}
+          onChangePlaybackMode={previewPlayer.cyclePlaybackMode}
+          playbackMode={previewPlayer.playbackMode}
           queueLength={previewPlayer.queue.length || (previewPlayer.currentSong ? 1 : 0)}
         />
       </ScrollView>

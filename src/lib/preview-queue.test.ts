@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { SavedSong } from '../types/song';
-import { buildPreviewQueue, clampPreviewSeek, nextQueueIndex, previousQueueIndex } from './preview-queue';
+import { buildPreviewQueue, clampPreviewSeek, nextPlaybackIndex, nextQueueIndex, previousQueueIndex } from './preview-queue';
 
 const playableSong: SavedSong = {
   id: 'playable',
@@ -38,5 +38,17 @@ describe('preview queue helpers', () => {
   it('clamps seek positions within a known preview duration', () => {
     expect(clampPreviewSeek(-10, 30)).toBe(0);
     expect(clampPreviewSeek(45, 30)).toBe(30);
+  });
+
+  it('restarts a preview in repeat-one mode', () => {
+    expect(nextPlaybackIndex(1, 3, 'repeat-one')).toBe(1);
+  });
+
+  it('loops from the final preview to the first preview in repeat-all mode', () => {
+    expect(nextPlaybackIndex(2, 3, 'repeat-all')).toBe(0);
+  });
+
+  it('picks a different preview in shuffle mode when one is available', () => {
+    expect(nextPlaybackIndex(1, 3, 'shuffle', () => 0.9)).not.toBe(1);
   });
 });

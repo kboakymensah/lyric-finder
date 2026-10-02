@@ -96,6 +96,8 @@ export default function LibraryScreen() {
           onSeekBack={() => previewPlayer.seekBy(-10)}
           onSeekForward={() => previewPlayer.seekBy(10)}
           onToggle={previewPlayer.toggle}
+          onChangePlaybackMode={previewPlayer.cyclePlaybackMode}
+          playbackMode={previewPlayer.playbackMode}
           queueLength={previewPlayer.queue.length}
           lyricLines={previewPlayer.lyricLines}
           lyricLoading={previewPlayer.lyricLoading}
