@@ -6,6 +6,15 @@ export function buildPreviewQueue(songs: SavedSong[]) {
   return songs.filter((song) => Boolean(song.previewUrl));
 }
 
+export function shufflePreviewQueue(songs: SavedSong[], random: () => number = Math.random) {
+  const shuffled = [...songs];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const target = Math.floor(random() * (index + 1));
+    [shuffled[index], shuffled[target]] = [shuffled[target], shuffled[index]];
+  }
+  return shuffled;
+}
+
 export function nextQueueIndex(index: number, queueLength: number) {
   return Math.min(index + 1, Math.max(queueLength - 1, 0));
 }

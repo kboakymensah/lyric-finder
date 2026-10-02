@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { SavedSong } from '../types/song';
-import { buildPreviewQueue, clampPreviewSeek, nextPlaybackIndex, nextQueueIndex, previousQueueIndex } from './preview-queue';
+import { buildPreviewQueue, clampPreviewSeek, nextPlaybackIndex, nextQueueIndex, previousQueueIndex, shufflePreviewQueue } from './preview-queue';
 
 const playableSong: SavedSong = {
   id: 'playable',
@@ -27,6 +27,12 @@ describe('preview queue helpers', () => {
 
   it('returns an empty queue when every saved song lacks a preview', () => {
     expect(buildPreviewQueue([unavailableSong])).toEqual([]);
+  });
+
+  it('reorders a multi-song preview queue for shuffle playback', () => {
+    const secondSong = { ...playableSong, id: 'second' };
+    const thirdSong = { ...playableSong, id: 'third' };
+    expect(shufflePreviewQueue([playableSong, secondSong, thirdSong], () => 0)).toEqual([secondSong, thirdSong, playableSong]);
   });
 
   it('does not move beyond queue boundaries', () => {
