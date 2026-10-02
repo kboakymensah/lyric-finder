@@ -90,6 +90,7 @@ describe('LibraryProvider', () => {
     act(() => library!.toggleSong(song));
 
     expect(library!.isLiked(song.id)).toBe(true);
+    expect(library!.isFavorite(song.id)).toBe(false);
     expect(storage.setItem).toHaveBeenCalledWith(
       '@lyric-finder/library-v1',
       JSON.stringify({
@@ -104,6 +105,7 @@ describe('LibraryProvider', () => {
             listenUrl: song.listenUrl,
           },
         ],
+        favoriteSongIds: [],
         playlists: [],
       }),
     );
@@ -207,7 +209,7 @@ describe('LibraryProvider', () => {
         ],
       },
     ]);
-    expect(library!.data.likedSongs).toEqual([]);
+    expect(library!.data.likedSongs).toHaveLength(1);
   });
 
   it('reports a readable error and keeps an empty library when loading fails', async () => {
@@ -228,7 +230,7 @@ describe('LibraryProvider', () => {
     });
 
     expect(library!.status).toBe('ready');
-    expect(library!.data).toEqual({ likedSongs: [], playlists: [] });
+    expect(library!.data).toEqual({ likedSongs: [], favoriteSongIds: [], playlists: [] });
     expect(library!.error).toBe('Your saved library could not be loaded.');
   });
 

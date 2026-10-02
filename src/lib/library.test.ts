@@ -9,6 +9,7 @@ import {
   parseLibrary,
   removeSongFromPlaylist,
   toSavedSong,
+  toggleFavoriteSong,
   toggleLikedSong,
 } from './library';
 
@@ -40,6 +41,7 @@ describe('local library operations', () => {
   it('does not share existing playlist songs with a created-library result', () => {
     const input = {
       likedSongs: [],
+      favoriteSongIds: [],
       playlists: [{ id: 'existing', name: 'Existing', songs: [song] }],
     };
 
@@ -49,14 +51,26 @@ describe('local library operations', () => {
     expect(input.playlists[0].songs).toEqual([song]);
   });
 
-  it('adds any song directly to a playlist once, even when it is not liked', () => {
+  it('adds any playlist song to liked songs and removes it everywhere when unliked', () => {
     const withPlaylist = createPlaylist(emptyLibrary, 'Road Trip');
     const id = withPlaylist.playlists[0].id;
     const withSong = addSongToPlaylist(withPlaylist, id, song);
-    expect(withSong.likedSongs).toEqual([]);
+    expect(withSong.likedSongs).toEqual([song]);
     expect(withSong.playlists[0].songs).toEqual([song]);
     expect(addSongToPlaylist(withSong, id, song).playlists[0].songs).toEqual([song]);
     expect(removeSongFromPlaylist(withSong, id, song.id).playlists[0].songs).toEqual([]);
+    expect(toggleLikedSong(withSong, song)).toEqual({ likedSongs: [], favoriteSongIds: [], playlists: [{ id, name: 'Road Trip', songs: [] }] });
+  });
+
+  it('favorites a song by liking it first, and unfavoriting keeps the liked song', () => {
+    const favorited = toggleFavoriteSong(emptyLibrary, song);
+    expect(favorited.likedSongs).toEqual([song]);
+    expect(favorited.favoriteSongIds).toEqual([song.id]);
+    expect(toggleFavoriteSong(favorited, song)).toEqual({ likedSongs: [song], favoriteSongIds: [], playlists: [] });
+  });
+
+  it('restores pre-favorites libraries with an empty favorites list', () => {
+    expect(parseLibrary(JSON.stringify({ likedSongs: [song], playlists: [] }))).toEqual({ likedSongs: [song], favoriteSongIds: [], playlists: [] });
   });
 
   it('deletes a playlist and rejects corrupt JSON', () => {

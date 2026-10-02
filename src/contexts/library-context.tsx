@@ -9,6 +9,7 @@ import {
   parseLibrary,
   removeSongFromPlaylist,
   toSavedSong,
+  toggleFavoriteSong,
   toggleLikedSong,
   type LibraryData,
 } from '../lib/library';
@@ -25,7 +26,9 @@ type LibraryContextValue = {
   status: LibraryStatus;
   error: string | null;
   isLiked: (songId: string) => boolean;
+  isFavorite: (songId: string) => boolean;
   toggleSong: (song: SongResult) => void;
+  toggleFavorite: (song: SongResult) => void;
   create: (name: string) => void;
   removePlaylist: (playlistId: string) => void;
   addToPlaylist: (playlistId: string, song: SongResult) => void;
@@ -134,7 +137,9 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       status,
       error,
       isLiked: (songId) => data.likedSongs.some((song) => song.id === songId),
+      isFavorite: (songId) => data.favoriteSongIds.includes(songId),
       toggleSong: (song) => update((library) => toggleLikedSong(library, toSavedSong(song))),
+      toggleFavorite: (song) => update((library) => toggleFavoriteSong(library, toSavedSong(song))),
       create,
       removePlaylist: (playlistId) => update((library) => deletePlaylist(library, playlistId)),
       addToPlaylist: (playlistId, song) =>

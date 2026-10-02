@@ -1,9 +1,9 @@
 import type { SavedSong, SongResult } from '../types/song';
 
 export type Playlist = { id: string; name: string; songs: SavedSong[] };
-export type LibraryData = { likedSongs: SavedSong[]; playlists: Playlist[] };
+export type LibraryData = { likedSongs: SavedSong[]; favoriteSongIds: string[]; playlists: Playlist[] };
 
-export const emptyLibrary: LibraryData = { likedSongs: [], playlists: [] };
+export const emptyLibrary: LibraryData = { likedSongs: [], favoriteSongIds: [], playlists: [] };
 
 const isNullableString = (value: unknown): value is string | null =>
   typeof value === 'string' || value === null;
@@ -50,6 +50,8 @@ const isLibraryData = (value: unknown): value is LibraryData => {
   return (
     Array.isArray(library.likedSongs) &&
     library.likedSongs.every(isSavedSong) &&
+    Array.isArray(library.favoriteSongIds) &&
+    library.favoriteSongIds.every((songId) => typeof songId === 'string') &&
     Array.isArray(library.playlists) &&
     library.playlists.every(isPlaylist)
   );
@@ -57,6 +59,7 @@ const isLibraryData = (value: unknown): value is LibraryData => {
 
 const copyLibrary = (library: LibraryData): LibraryData => ({
   likedSongs: [...library.likedSongs],
+  favoriteSongIds: [...library.favoriteSongIds],
   playlists: library.playlists.map((playlist) => ({ ...playlist, songs: [...playlist.songs] })),
 });
 
@@ -71,11 +74,24 @@ export const parseLibrary = (storedLibrary: string): LibraryData => {
       Array.isArray((parsed as { likedSongs?: unknown }).likedSongs) &&
       (parsed as { likedSongs: unknown[] }).likedSongs.every(isSavedSong) &&
       Array.isArray((parsed as { playlists?: unknown }).playlists) &&
+      (parsed as { playlists: unknown[] }).playlists.every(isPlaylist)
+    ) {
+      const legacy = parsed as { likedSongs: SavedSong[]; playlists: Playlist[] };
+      return { likedSongs: [...legacy.likedSongs], favoriteSongIds: [], playlists: legacy.playlists.map((playlist) => ({ ...playlist, songs: [...playlist.songs] })) };
+    }
+
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      Array.isArray((parsed as { likedSongs?: unknown }).likedSongs) &&
+      (parsed as { likedSongs: unknown[] }).likedSongs.every(isSavedSong) &&
+      Array.isArray((parsed as { playlists?: unknown }).playlists) &&
       (parsed as { playlists: unknown[] }).playlists.every(isLegacyPlaylist)
     ) {
       const legacy = parsed as { likedSongs: SavedSong[]; playlists: Array<{ id: string; name: string; songIds: string[] }> };
       return {
         likedSongs: [...legacy.likedSongs],
+        favoriteSongIds: [],
         playlists: legacy.playlists.map((playlist) => ({
           id: playlist.id,
           name: playlist.name,
@@ -104,11 +120,27 @@ export const toSavedSong = (song: SongResult): SavedSong => ({
 
 export const toggleLikedSong = (library: LibraryData, song: SavedSong): LibraryData => {
   const isLiked = library.likedSongs.some((likedSong) => likedSong.id === song.id);
+  if (!isLiked) return { ...copyLibrary(library), likedSongs: [...library.likedSongs, song] };
+
   return {
     ...copyLibrary(library),
-    likedSongs: isLiked
-      ? library.likedSongs.filter((likedSong) => likedSong.id !== song.id)
-      : [...library.likedSongs, song],
+    likedSongs: library.likedSongs.filter((likedSong) => likedSong.id !== song.id),
+    favoriteSongIds: library.favoriteSongIds.filter((songId) => songId !== song.id),
+    playlists: library.playlists.map((playlist) => ({ ...playlist, songs: playlist.songs.filter((savedSong) => savedSong.id !== song.id) })),
+  };
+};
+
+export const toggleFavoriteSong = (library: LibraryData, song: SavedSong): LibraryData => {
+  const alreadyFavorite = library.favoriteSongIds.includes(song.id);
+  const withLikedSong = library.likedSongs.some((likedSong) => likedSong.id === song.id)
+    ? copyLibrary(library)
+    : { ...copyLibrary(library), likedSongs: [...library.likedSongs, song] };
+
+  return {
+    ...withLikedSong,
+    favoriteSongIds: alreadyFavorite
+      ? library.favoriteSongIds.filter((songId) => songId !== song.id)
+      : [...library.favoriteSongIds, song.id],
   };
 };
 
@@ -146,6 +178,7 @@ export const addSongToPlaylist = (
 ): LibraryData => {
   return {
     ...copyLibrary(library),
+    likedSongs: library.likedSongs.some((likedSong) => likedSong.id === song.id) ? [...library.likedSongs] : [...library.likedSongs, song],
     playlists: library.playlists.map((playlist) => {
       if (playlist.id !== playlistId || playlist.songs.some((savedSong) => savedSong.id === song.id)) {
         return { ...playlist, songs: [...playlist.songs] };
