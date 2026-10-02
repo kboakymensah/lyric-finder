@@ -11,9 +11,11 @@ type SongResultsProps = {
   isPlayingId: string | null;
   onTogglePreview: (song: SongResult) => void;
   isSaved?: (songId: string) => boolean;
+  isFavorite?: (songId: string) => boolean;
   onViewLyrics?: (song: SongResult) => void;
   onListen?: (song: SongResult, platform: ListeningPlatform) => void;
   onToggleSaved?: (song: SongResult) => void;
+  onToggleFavorite?: (song: SongResult) => void;
   playlists?: Playlist[];
   onAddToPlaylist?: (playlistId: string, song: SongResult) => void;
 };
@@ -27,9 +29,11 @@ export function SongResults({
   isPlayingId,
   onTogglePreview,
   isSaved = isNotSaved,
+  isFavorite = isNotSaved,
   onViewLyrics = noAction,
   onListen = noAction,
   onToggleSaved = noAction,
+  onToggleFavorite = noAction,
   playlists = [],
   onAddToPlaylist = noAction,
 }: SongResultsProps) {
@@ -55,10 +59,12 @@ export function SongResults({
         emphasis="best"
         isPlaying={isPlayingId === bestMatch.id}
         isSaved={isSaved(bestMatch.id)}
+        isFavorite={isFavorite(bestMatch.id)}
         onTogglePreview={() => onTogglePreview(bestMatch)}
         onViewLyrics={onViewLyrics}
         onListen={onListen}
         onToggleSaved={onToggleSaved}
+        onToggleFavorite={onToggleFavorite}
         playlists={playlists}
         onAddToPlaylist={onAddToPlaylist}
       />
@@ -73,10 +79,12 @@ export function SongResults({
               emphasis="alternative"
               isPlaying={isPlayingId === song.id}
               isSaved={isSaved(song.id)}
+              isFavorite={isFavorite(song.id)}
               onTogglePreview={() => onTogglePreview(song)}
               onViewLyrics={onViewLyrics}
               onListen={onListen}
               onToggleSaved={onToggleSaved}
+              onToggleFavorite={onToggleFavorite}
               playlists={playlists}
               onAddToPlaylist={onAddToPlaylist}
             />

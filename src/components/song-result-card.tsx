@@ -11,23 +11,29 @@ type SongResultCardProps = {
   emphasis: 'best' | 'alternative';
   isPlaying: boolean;
   isSaved: boolean;
+  isFavorite?: boolean;
   onTogglePreview: () => void;
   onViewLyrics: (song: SongResult) => void;
   onListen: (song: SongResult, platform: ListeningPlatform) => void;
   onToggleSaved: (song: SongResult) => void;
+  onToggleFavorite?: (song: SongResult) => void;
   playlists?: Playlist[];
   onAddToPlaylist?: (playlistId: string, song: SongResult) => void;
 };
+
+export const favoriteGlyph = (isFavorite: boolean) => (isFavorite ? '★' : '☆');
 
 export function SongResultCard({
   song,
   emphasis,
   isPlaying,
   isSaved,
+  isFavorite = false,
   onTogglePreview,
   onViewLyrics,
   onListen,
   onToggleSaved,
+  onToggleFavorite = () => {},
   playlists = [],
   onAddToPlaylist = () => {},
 }: SongResultCardProps) {
@@ -70,6 +76,7 @@ export function SongResultCard({
       <View style={styles.details}>
         <View style={styles.songHeader}>
           <Text style={styles.title}>{song.title}</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel={isFavorite ? `Remove ${song.title} from favorites` : `Add ${song.title} to favorites`} onPress={() => onToggleFavorite(song)} style={[styles.favoriteButton, isFavorite && styles.favoriteActive]}><Text style={[styles.favoriteSymbol, isFavorite && styles.favoriteSymbolActive]}>{favoriteGlyph(isFavorite)}</Text></Pressable>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={isSaved ? `Remove ${song.title} from liked songs` : `Add ${song.title} to liked songs`}
@@ -292,6 +299,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 32,
   },
+  favoriteButton: { alignItems: 'center', borderColor: '#625B48', borderRadius: 16, borderWidth: 1, height: 30, justifyContent: 'center', width: 30 },
+  favoriteActive: { backgroundColor: '#F7C948', borderColor: '#F7C948' },
+  favoriteSymbol: { color: '#F7C948', fontSize: 18, lineHeight: 20 },
+  favoriteSymbolActive: { color: '#0B0B0A' },
   savedButton: {
     backgroundColor: '#FFF7DF',
   },

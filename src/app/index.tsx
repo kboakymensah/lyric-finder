@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import { Link } from 'expo-router';
-import { ActivityIndicator, Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Keyboard, Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { validateLyrics } from '../../lib/validation';
 import { fetchWithTimeout } from '../../lib/request';
 import { lyricDestination } from '../../lib/genius-links';
@@ -22,7 +22,7 @@ export default function Home() {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const previewPlayer = usePreviewPlayer();
-  const { addToPlaylist, data: library, error: libraryError, isLiked, toggleSong } = useLibrary();
+  const { addToPlaylist, data: library, error: libraryError, isFavorite, isLiked, toggleFavorite, toggleSong } = useLibrary();
 
   useEffect(() => {
     void AsyncStorage.getItem('@lyric-finder/recent-searches-v1').then((stored) => setRecentSearches(stored ? parseRecentSearches(stored) : [])).catch(() => setRecentSearches([]));
@@ -96,7 +96,9 @@ export default function Home() {
         <TextInput
           accessibilityLabel="Lyrics"
           multiline
+          blurOnSubmit
           onChangeText={setLyrics}
+          onSubmitEditing={() => { Keyboard.dismiss(); void search(); }}
           placeholder="Type a line or two you remember…"
           placeholderTextColor="#BDB6A4"
           style={s.input}
@@ -122,6 +124,7 @@ export default function Home() {
           isPlayingId={previewPlayer.isPlaying ? previewPlayer.currentSong?.id ?? null : null}
           onTogglePreview={previewPlayer.toggleSong}
           isSaved={isLiked}
+          isFavorite={isFavorite}
           onViewLyrics={(song) => {
             const destination = lyricDestination(song, lyrics);
             if (destination.geniusUnavailable) {
@@ -131,6 +134,7 @@ export default function Home() {
           }}
           onListen={(song, platform) => openExternal(listeningUrl(song, platform), 'That music service could not be opened for this song.')}
           onToggleSaved={toggleSong}
+          onToggleFavorite={toggleFavorite}
           playlists={library.playlists}
           onAddToPlaylist={addToPlaylist}
         />
