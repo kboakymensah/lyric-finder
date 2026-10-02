@@ -119,6 +119,55 @@ describe('searchSongs', () => {
     });
   });
 
+  it('uses a verified Deezer preview when iTunes has no compatible result', async () => {
+    const fetcher: Fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(input instanceof Request ? input.url : String(input));
+      if (url.hostname === 'api.genius.com') return new Response(JSON.stringify({ response: { hits: [{ result: {
+        id: 1260970472, title: 'Hellcats & Trackhawks', primary_artist: { name: 'Lil Durk' }, url: 'https://genius.com/Lil-durk-hellcats-and-trackhawks-lyrics',
+      } }] } }));
+      if (url.hostname === 'itunes.apple.com') return new Response(JSON.stringify({ results: [] }));
+      if (url.hostname === 'api.deezer.com' && url.pathname === '/search') return new Response(JSON.stringify({ data: [{ id: 1260970472 }] }));
+      if (url.hostname === 'api.deezer.com' && url.pathname === '/track/1260970472') return new Response(JSON.stringify({
+        id: 1260970472,
+        title: 'Hellcats & Trackhawks',
+        preview: 'https://deezer.example/hellcats-preview.mp3',
+        link: 'https://www.deezer.com/track/1260970472',
+        contributors: [{ name: 'Only The Family' }, { name: 'Lil Durk' }],
+      }));
+      throw new Error(`Unexpected request to ${url.hostname}${url.pathname}`);
+    });
+
+    await expect(searchSongs('hellcats and trackhawks srt', fetcher, { geniusAccessToken: 'test-token' })).resolves.toEqual([
+      expect.objectContaining({
+        previewUrl: 'https://deezer.example/hellcats-preview.mp3',
+        listenUrl: 'https://www.deezer.com/track/1260970472',
+      }),
+    ]);
+  });
+
+  it('rejects a same-title Deezer result when its contributors exclude the requested artist', async () => {
+    const fetcher: Fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(input instanceof Request ? input.url : String(input));
+      if (url.hostname === 'api.genius.com') return new Response(JSON.stringify({ response: { hits: [{ result: {
+        id: 1260970472, title: 'Hellcats & Trackhawks', primary_artist: { name: 'Lil Durk' }, url: 'https://genius.com/Lil-durk-hellcats-and-trackhawks-lyrics',
+      } }] } }));
+      if (url.hostname === 'itunes.apple.com') return new Response(JSON.stringify({ results: [] }));
+      if (url.hostname === 'api.deezer.com' && url.pathname === '/search') return new Response(JSON.stringify({ data: [{ id: 456 }] }));
+      if (url.hostname === 'api.deezer.com' && url.pathname === '/track/456') return new Response(JSON.stringify({
+        id: 456,
+        title: 'Hellcats & Trackhawks',
+        preview: 'https://deezer.example/wrong-preview.mp3',
+        link: 'https://www.deezer.com/track/456',
+        contributors: [{ name: 'Another Artist' }],
+      }));
+      throw new Error(`Unexpected request to ${url.hostname}${url.pathname}`);
+    });
+
+    await expect(searchSongs('hellcats and trackhawks srt', fetcher, { geniusAccessToken: 'test-token' })).resolves.toEqual([
+      expect.objectContaining({ previewUrl: null }),
+    ]);
+  });
+
   it('falls back to LRCLIB when Genius has no lyric hits', async () => {
     const fetcher: Fetcher = vi.fn(async (input: RequestInfo | URL) => {
       const url = new URL(input instanceof Request ? input.url : String(input));

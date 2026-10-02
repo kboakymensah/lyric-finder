@@ -2,6 +2,15 @@ export type Fetcher = typeof fetch;
 
 type LrcTrack = { id: number; trackName: string; artistName: string; plainLyrics?: string | null };
 type CatalogTrack = { trackId: number; trackName: string; artistName: string; artworkUrl100?: string; previewUrl?: string; trackViewUrl?: string };
+type DeezerSearchTrack = { id: number | string };
+type DeezerTrack = {
+  id: number | string;
+  title: string;
+  preview?: string;
+  link?: string;
+  album?: { cover_medium?: string; cover_xl?: string };
+  contributors?: Array<{ name?: string }>;
+};
 type GeniusSong = { id: number; title: string; primary_artist: { name: string }; song_art_image_url?: string; url?: string };
 type SearchOptions = { geniusAccessToken?: string };
 
@@ -64,6 +73,58 @@ async function enrichWithITunes(trackName: string, artistName: string, fetcher: 
   }
 }
 
+async function enrichWithDeezer(trackName: string, artistName: string, fetcher: Fetcher): Promise<CatalogTrack | undefined> {
+  const searchUrl = new URL('https://api.deezer.com/search');
+  searchUrl.searchParams.set('q', `${trackName} ${artistName}`);
+  searchUrl.searchParams.set('limit', '5');
+  try {
+    const searchResponse = await fetcher(searchUrl);
+    if (!searchResponse.ok) return undefined;
+    const candidates = (await searchResponse.json() as { data?: DeezerSearchTrack[] }).data ?? [];
+    const normalizedTitle = normalizeCatalogTitle(trackName);
+
+    for (const candidate of candidates) {
+      const detailResponse = await fetcher(`https://api.deezer.com/track/${candidate.id}`);
+      if (!detailResponse.ok) continue;
+      const track = await detailResponse.json() as DeezerTrack;
+      const hasRequestedContributor = (track.contributors ?? []).some((contributor) =>
+        typeof contributor.name === 'string' && isCompatibleCatalogArtist(contributor.name, artistName),
+      );
+      if (
+        normalizeCatalogTitle(track.title) !== normalizedTitle ||
+        !hasRequestedContributor ||
+        !track.preview
+      ) continue;
+
+      return {
+        trackId: Number(track.id),
+        trackName: track.title,
+        artistName,
+        artworkUrl100: track.album?.cover_xl ?? track.album?.cover_medium,
+        previewUrl: track.preview,
+        trackViewUrl: track.link,
+      };
+    }
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}
+
+async function enrichWithCatalog(trackName: string, artistName: string, fetcher: Fetcher): Promise<CatalogTrack | undefined> {
+  const iTunes = await enrichWithITunes(trackName, artistName, fetcher);
+  if (iTunes?.previewUrl) return iTunes;
+
+  const deezer = await enrichWithDeezer(trackName, artistName, fetcher);
+  if (!deezer) return iTunes;
+
+  return {
+    ...deezer,
+    artworkUrl100: iTunes?.artworkUrl100 ?? deezer.artworkUrl100,
+    trackViewUrl: iTunes?.trackViewUrl ?? deezer.trackViewUrl,
+  };
+}
+
 async function searchGenius(query: string, fetcher: Fetcher, accessToken?: string) {
   if (!accessToken) return [];
   try {
@@ -83,7 +144,7 @@ async function searchGenius(query: string, fetcher: Fetcher, accessToken?: strin
 export async function searchSongs(query: string, fetcher: Fetcher = fetch, options: SearchOptions = {}) {
   const geniusMatches = await searchGenius(query, fetcher, options.geniusAccessToken);
   if (geniusMatches.length) return Promise.all(geniusMatches.map(async (match) => {
-    const catalog = await enrichWithITunes(match.title, match.primary_artist.name, fetcher);
+    const catalog = await enrichWithCatalog(match.title, match.primary_artist.name, fetcher);
     return {
       id: String(match.id), title: match.title, artist: match.primary_artist.name,
       artworkUrl: match.song_art_image_url ?? catalog?.artworkUrl100 ?? null,
@@ -114,7 +175,7 @@ export async function searchSongs(query: string, fetcher: Fetcher = fetch, optio
     .slice(0, 5);
 
   return Promise.all(matches.map(async ({ match }) => {
-    const catalog = await enrichWithITunes(match.trackName, match.artistName, fetcher);
+    const catalog = await enrichWithCatalog(match.trackName, match.artistName, fetcher);
     return { id: String(match.id), title: match.trackName, artist: match.artistName, artworkUrl: catalog?.artworkUrl100 ?? null, lyricsUrl: null, lyricSnippet: snippet(match.plainLyrics), previewUrl: catalog?.previewUrl ?? null, listenUrl: catalog?.trackViewUrl ?? `https://www.google.com/search?q=${encodeURIComponent(`${match.trackName} ${match.artistName} song`)}`, matchScore: scoreLyricMatch(query, match.plainLyrics) };
   }));
 }
