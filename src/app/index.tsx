@@ -145,6 +145,9 @@ export default function Home() {
           currentSong={previewPlayer.currentSong}
           currentSeconds={previewPlayer.currentSeconds}
           durationSeconds={previewPlayer.durationSeconds}
+          relatedSongs={previewPlayer.relatedSongs}
+          relatedLoading={previewPlayer.relatedLoading}
+          onPlayRelated={previewPlayer.startSong}
           isPlaying={previewPlayer.isPlaying}
           lyricLines={previewPlayer.lyricLines}
           lyricLoading={previewPlayer.lyricLoading}

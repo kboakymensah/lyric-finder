@@ -3,15 +3,16 @@ import { useEffect, useRef } from 'react';
 
 import { activeLyricIndex, type TimedLyricLine } from '../lib/synced-lyrics';
 
-type SyncedLyricsProps = { lines: TimedLyricLine[]; currentSeconds: number; isLoading: boolean; message: string | null };
+type SyncedLyricsProps = { lines: TimedLyricLine[]; currentSeconds: number; isLoading: boolean; message: string | null; expanded?: boolean };
 
-export function SyncedLyrics({ lines, currentSeconds, isLoading, message }: SyncedLyricsProps) {
+export function SyncedLyrics({ lines, currentSeconds, isLoading, message, expanded = false }: SyncedLyricsProps) {
   const scrollRef = useRef<ScrollView>(null);
   const activeIndex = activeLyricIndex(lines, currentSeconds);
   useEffect(() => { if (activeIndex !== null) scrollRef.current?.scrollTo({ y: Math.max(0, (activeIndex * 34) - 68), animated: true }); }, [activeIndex]);
   if (isLoading) return <Text style={styles.muted}>Loading timed lyrics…</Text>;
   if (message) return <Text style={styles.message}>{message}</Text>;
-  return <ScrollView ref={scrollRef} style={styles.panel}>{lines.map((line, index) => <View key={`${line.timeSeconds}-${index}`}><Text style={[styles.line, index === activeIndex && styles.active]}>{line.text}</Text></View>)}</ScrollView>;
+  const lyricLines = lines.map((line, index) => <View key={`${line.timeSeconds}-${index}`}><Text style={[styles.line, index === activeIndex && styles.active]}>{line.text}</Text></View>);
+  return expanded ? <View>{lyricLines}</View> : <ScrollView ref={scrollRef} style={styles.panel}>{lyricLines}</ScrollView>;
 }
 
 const styles = StyleSheet.create({ panel: { maxHeight: 180 }, line: { color: '#BDB6A4', paddingVertical: 5 }, active: { color: '#F7C948', fontWeight: '800' }, muted: { color: '#BDB6A4' }, message: { color: '#FFAAA8' } });

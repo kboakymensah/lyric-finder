@@ -111,6 +111,9 @@ export default function LibraryScreen() {
           lyricMessage={previewPlayer.lyricMessage}
           currentSeconds={previewPlayer.currentSeconds}
           durationSeconds={previewPlayer.durationSeconds}
+          relatedSongs={previewPlayer.relatedSongs}
+          relatedLoading={previewPlayer.relatedLoading}
+          onPlayRelated={previewPlayer.startSong}
         />
       </ScrollView>
     </SafeAreaView>
