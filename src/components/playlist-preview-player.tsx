@@ -102,7 +102,7 @@ export function PlaylistPreviewPlayer({
               <Text style={styles.modeText}>{playbackMode === 'shuffle' ? '⇄ Shuffle' : playbackMode === 'repeat-one' ? '↻ Repeat one' : playbackMode === 'repeat-all' ? '↻ Repeat all' : '→ Play once'}</Text>
             </Pressable>
             <Text style={styles.previewNote}>30-SECOND PREVIEW</Text>
-            <SyncedLyrics expanded lines={lyricLines} currentSeconds={elapsed} isLoading={lyricLoading} message={lyricMessage} />
+            <SyncedLyrics canHighlight={false} expanded lines={lyricLines} currentSeconds={elapsed} isLoading={lyricLoading} message={lyricMessage} />
             {elapsed >= 5 && <View style={styles.relatedSection}><Text style={styles.relatedHeading}>MORE LIKE THIS</Text>{relatedLoading ? <Text style={styles.relatedMuted}>Finding related preview songs…</Text> : relatedSongs.length === 0 ? <Text style={styles.relatedMuted}>No related previews available yet.</Text> : relatedSongs.map((song) => <Pressable key={song.id} accessibilityRole="button" accessibilityLabel={`Play related preview ${song.title}`} onPress={() => onPlayRelated(song)} style={styles.relatedSong}><View><Text style={styles.relatedTitle}>{song.title}</Text><Text style={styles.relatedArtist}>{song.artist}</Text></View><Text style={styles.relatedPlay}>▶</Text></Pressable>)}</View>}
           </ScrollView>}
           {message && <Text style={styles.message}>{message}</Text>}

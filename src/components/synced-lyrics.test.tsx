@@ -21,4 +21,12 @@ describe('SyncedLyrics', () => {
     act(() => { panel = create(<SyncedLyrics lines={lines} currentSeconds={10} isLoading={false} message={null} />); });
     expect(panel!.root.findByProps({ children: 'Second' })).toBeTruthy();
   });
+
+  it('does not pretend an unknown excerpt offset is line-synced', () => {
+    let panel: ReturnType<typeof create>;
+    act(() => { panel = create(<SyncedLyrics canHighlight={false} lines={lines} currentSeconds={10} isLoading={false} message={null} />); });
+    const secondLine = panel!.root.findByProps({ children: 'Second' });
+    expect(secondLine.props.style).not.toContainEqual(expect.objectContaining({ color: '#F7C948' }));
+    expect(panel!.root.findByProps({ children: 'Lyrics are shown for reference; this preview excerpt cannot be line-synced.' })).toBeTruthy();
+  });
 });
