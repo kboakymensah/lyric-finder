@@ -8,6 +8,7 @@ import {
   emptyLibrary,
   parseLibrary,
   removeSongFromPlaylist,
+  renamePlaylist,
   toSavedSong,
   toggleFavoriteSong,
   toggleLikedSong,
@@ -36,6 +37,13 @@ describe('local library operations', () => {
     expect(next.playlists[0].name).toBe('Road Trip');
     expect(createPlaylist(next, 'road trip').playlists).toHaveLength(1);
     expect(createPlaylist(next, '   ').playlists).toHaveLength(1);
+  });
+
+  it('renames a playlist with a unique trimmed name and rejects duplicates', () => {
+    const created = createPlaylist(emptyLibrary, 'Road Trip');
+    const playlistId = created.playlists[0].id;
+    expect(renamePlaylist(created, playlistId, '  Night Drive  ').playlists[0].name).toBe('Night Drive');
+    expect(renamePlaylist(created, playlistId, 'Road Trip')).toEqual(created);
   });
 
   it('does not share existing playlist songs with a created-library result', () => {

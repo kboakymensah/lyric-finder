@@ -171,6 +171,17 @@ export const deletePlaylist = (library: LibraryData, playlistId: string): Librar
     .map((playlist) => ({ ...playlist, songs: [...playlist.songs] })),
 });
 
+export const renamePlaylist = (library: LibraryData, playlistId: string, name: string): LibraryData => {
+  const trimmedName = name.trim();
+  const isDuplicate = library.playlists.some((playlist) => playlist.id !== playlistId && playlist.name.toLocaleLowerCase() === trimmedName.toLocaleLowerCase());
+  if (!trimmedName || isDuplicate) return copyLibrary(library);
+
+  return {
+    ...copyLibrary(library),
+    playlists: library.playlists.map((playlist) => playlist.id === playlistId ? { ...playlist, name: trimmedName, songs: [...playlist.songs] } : { ...playlist, songs: [...playlist.songs] }),
+  };
+};
+
 export const addSongToPlaylist = (
   library: LibraryData,
   playlistId: string,
