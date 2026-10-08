@@ -6,6 +6,7 @@ const nativePlaylist = vi.hoisted(() => ({
   play: vi.fn(), pause: vi.fn(), next: vi.fn(), previous: vi.fn(), seekTo: vi.fn(), skipTo: vi.fn(),
 }));
 const nativeStatus = vi.hoisted(() => ({ currentIndex: 0, trackCount: 0, currentTime: 0, duration: 30, playing: false, error: null }));
+const storage = vi.hoisted(() => ({ getItem: vi.fn().mockResolvedValue(null), setItem: vi.fn().mockResolvedValue(undefined) }));
 
 vi.mock('expo-audio', () => ({
   useAudioPlaylist: ({ sources }: { sources?: string[] }) => {
@@ -14,6 +15,7 @@ vi.mock('expo-audio', () => ({
   },
   useAudioPlaylistStatus: () => nativeStatus,
 }));
+vi.mock('@react-native-async-storage/async-storage', () => ({ default: storage }));
 
 import { PreviewPlayerProvider, usePreviewPlayer } from './preview-player-context';
 

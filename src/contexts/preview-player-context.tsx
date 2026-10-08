@@ -1,9 +1,11 @@
 import { useAudioPlaylist, useAudioPlaylistStatus, type AudioPlaylistLoopMode } from 'expo-audio';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { fetchWithTimeout } from '../../lib/request';
 import { buildPreviewQueue, clampPreviewSeek, shufflePreviewQueue, type PlaybackMode } from '../lib/preview-queue';
 import { findRelatedSongs } from '../lib/related-songs';
+import { addRecentlyPlayed, parseRecentlyPlayed } from '../lib/recently-played';
 import type { TimedLyricLine } from '../lib/synced-lyrics';
 import type { SavedSong, SongResult } from '../types/song';
 
@@ -12,7 +14,7 @@ type LibraryQueueSource = 'liked' | 'favorites';
 type PreviewPlayerValue = {
   currentSong: PlayableSong | null; currentIndex: number; queue: SavedSong[]; canNext: boolean; canPrevious: boolean;
   isPlaying: boolean; message: string | null; currentSeconds: number; durationSeconds: number; playbackMode: PlaybackMode;
-  lyricLines: TimedLyricLine[]; lyricLoading: boolean; lyricMessage: string | null; relatedSongs: SongResult[]; relatedLoading: boolean;
+  lyricLines: TimedLyricLine[]; lyricLoading: boolean; lyricMessage: string | null; relatedSongs: SongResult[]; relatedLoading: boolean; recentlyPlayed: SavedSong[];
   libraryQueueSource: LibraryQueueSource | null; startSong(song: SongResult): void; startQueue(songs: SavedSong[]): void; startLibraryQueue(songs: SavedSong[], source: LibraryQueueSource): void; refreshLibraryQueue(songs: SavedSong[]): void; toggleSong(song: SongResult): void; toggle(): void;
   next(): void; previous(): void; seekBy(seconds: number): Promise<void>; setPlaybackMode(mode: PlaybackMode): void; cyclePlaybackMode(): void;
 };
@@ -34,6 +36,7 @@ export function PreviewPlayerProvider({ children }: { children: ReactNode }) {
   const [lyricMessage, setLyricMessage] = useState<string | null>(null);
   const [relatedSongs, setRelatedSongs] = useState<SongResult[]>([]);
   const [relatedLoading, setRelatedLoading] = useState(false);
+  const [recentlyPlayed, setRecentlyPlayed] = useState<SavedSong[]>([]);
   const lyricRequest = useRef(0);
   const shouldAutoplay = useRef(false);
   const playbackModeRef = useRef<PlaybackMode>('repeat-all');
@@ -46,6 +49,25 @@ export function PreviewPlayerProvider({ children }: { children: ReactNode }) {
   const currentSong = activeSongs[currentIndex] ?? null;
   const canNext = !single && queue.length > 1 && (playbackMode !== 'normal' || currentIndex < queue.length - 1);
   const canPrevious = !single && queue.length > 1 && (playbackMode !== 'normal' || currentIndex > 0);
+
+  useEffect(() => {
+    void AsyncStorage.getItem('@lyric-finder/recently-played-v1')
+      .then((stored) => setRecentlyPlayed(stored ? parseRecentlyPlayed(stored) : []))
+      .catch(() => setRecentlyPlayed([]));
+  }, []);
+
+  useEffect(() => {
+    if (!currentSong) return;
+    const savedSong: SavedSong = {
+      id: currentSong.id, title: currentSong.title, artist: currentSong.artist, artworkUrl: currentSong.artworkUrl,
+      lyricsUrl: currentSong.lyricsUrl, previewUrl: currentSong.previewUrl, listenUrl: currentSong.listenUrl,
+    };
+    setRecentlyPlayed((history) => {
+      const next = addRecentlyPlayed(history, savedSong);
+      void AsyncStorage.setItem('@lyric-finder/recently-played-v1', JSON.stringify(next));
+      return next;
+    });
+  }, [currentSong?.id]);
 
   useEffect(() => {
     if (!shouldAutoplay.current || !sources.length) return;
@@ -121,6 +143,6 @@ export function PreviewPlayerProvider({ children }: { children: ReactNode }) {
     return () => { active = false; };
   }, [currentSong?.id]);
 
-  return <PreviewPlayerContext.Provider value={{ currentSong, currentIndex, queue, canNext, canPrevious, isPlaying: status.playing, message, currentSeconds: status.currentTime, durationSeconds: status.duration || 30, playbackMode, lyricLines, lyricLoading, lyricMessage, relatedSongs, relatedLoading, libraryQueueSource, startSong, startQueue, startLibraryQueue, refreshLibraryQueue, toggleSong, toggle, next, previous, seekBy, setPlaybackMode: setMode, cyclePlaybackMode }}>{children}</PreviewPlayerContext.Provider>;
+  return <PreviewPlayerContext.Provider value={{ currentSong, currentIndex, queue, canNext, canPrevious, isPlaying: status.playing, message, currentSeconds: status.currentTime, durationSeconds: status.duration || 30, playbackMode, lyricLines, lyricLoading, lyricMessage, relatedSongs, relatedLoading, recentlyPlayed, libraryQueueSource, startSong, startQueue, startLibraryQueue, refreshLibraryQueue, toggleSong, toggle, next, previous, seekBy, setPlaybackMode: setMode, cyclePlaybackMode }}>{children}</PreviewPlayerContext.Provider>;
 }
 export function usePreviewPlayer() { const value = useContext(PreviewPlayerContext); if (!value) throw new Error('usePreviewPlayer must be used inside PreviewPlayerProvider'); return value; }

@@ -59,6 +59,15 @@ export default function LibraryScreen() {
         {error && <Text style={styles.error}>{error}</Text>}
 
         <View style={styles.section}>
+          <Text style={styles.heading}>Recently played</Text>
+          {previewPlayer.recentlyPlayed.length === 0 ? <Text style={styles.empty}>Songs you play will appear here, even after you close the app.</Text> : previewPlayer.recentlyPlayed.map((song) => (
+            <Pressable key={song.id} accessibilityRole="button" accessibilityLabel={`Play ${song.title} again`} onPress={() => previewPlayer.startSong(toToggleableSong(song))} style={styles.membershipRow}>
+              <Text style={styles.membershipTitle}>{song.title} · {song.artist}</Text><Text style={styles.add}>Play</Text>
+            </Pressable>
+          ))}
+        </View>
+
+        <View style={styles.section}>
           <View style={styles.selectionHeader}>
             <Text style={styles.heading}>Liked songs</Text>
             <View style={styles.headerActions}><Pressable accessibilityRole="button" accessibilityLabel="Shuffle liked previews" onPress={() => playSongs(data.likedSongs, 'shuffle', 'liked')} style={styles.outlineButton}><Text style={styles.outlineButtonText}>Shuffle</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Play liked previews" onPress={() => playSongs(data.likedSongs, 'repeat-all', 'liked')} style={styles.playButton}><Text style={styles.playButtonText}>Play all</Text></Pressable></View>
