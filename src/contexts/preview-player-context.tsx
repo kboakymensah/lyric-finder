@@ -104,7 +104,12 @@ export function PreviewPlayerProvider({ children }: { children: ReactNode }) {
   function refreshLibraryQueue(songs: SavedSong[]) {
     if (!libraryQueueSource || single) return;
     const playableSongs = buildPreviewQueue(songs);
-    const nextQueue = playbackModeRef.current === 'shuffle' ? shufflePreviewQueue(playableSongs) : playableSongs;
+    const nextQueue = playbackModeRef.current === 'shuffle'
+      ? [
+          ...queue.filter((song) => playableSongs.some((playable) => playable.id === song.id)),
+          ...shufflePreviewQueue(playableSongs.filter((song) => !queue.some((queued) => queued.id === song.id))),
+        ]
+      : playableSongs;
     if (!nextQueue.length || nextQueue.map((song) => song.id).join('|') === queue.map((song) => song.id).join('|')) return;
     const songIndex = currentSong ? nextQueue.findIndex((song) => song.id === currentSong.id) : -1;
     pendingQueueRestore.current = { index: songIndex >= 0 ? songIndex : 0, seconds: status.currentTime, shouldPlay: status.playing };

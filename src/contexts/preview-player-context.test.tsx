@@ -69,4 +69,20 @@ describe('PreviewPlayerProvider', () => {
     expect(rendered.player().currentSong).toEqual(nextSong);
     expect(rendered.player().queue).toHaveLength(3);
   });
+
+  it('keeps the shuffled order stable when the library has not changed', () => {
+    nativeStatus.currentIndex = 0;
+    nativeStatus.currentTime = 0;
+    nativeStatus.playing = false;
+    const random = vi.spyOn(Math, 'random').mockReturnValueOnce(0).mockReturnValueOnce(0.99);
+    const rendered = renderPlayer();
+    act(() => rendered.player().setPlaybackMode('shuffle'));
+    act(() => rendered.player().startLibraryQueue([song, nextSong], 'liked'));
+    const firstOrder = rendered.player().queue.map((item) => item.id);
+
+    act(() => rendered.player().refreshLibraryQueue([song, nextSong]));
+
+    expect(rendered.player().queue.map((item) => item.id)).toEqual(firstOrder);
+    random.mockRestore();
+  });
 });
