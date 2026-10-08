@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useLibrary } from '../contexts/library-context';
@@ -18,7 +18,16 @@ export default function LibraryScreen() {
   const selectedPlaylist = data.playlists.find((playlist) => playlist.id === selectedPlaylistId) ?? null;
   const selectedSongs = selectedPlaylist?.songs ?? [];
   const favoriteSongs = data.likedSongs.filter((song) => data.favoriteSongIds.includes(song.id));
-  function playSongs(songs: SavedSong[], mode: 'repeat-all' | 'shuffle' = 'repeat-all') { previewPlayer.setPlaybackMode(mode); previewPlayer.startQueue(songs); }
+  function playSongs(songs: SavedSong[], mode: 'repeat-all' | 'shuffle' = 'repeat-all', source?: 'liked' | 'favorites') {
+    previewPlayer.setPlaybackMode(mode);
+    if (source) previewPlayer.startLibraryQueue(songs, source);
+    else previewPlayer.startQueue(songs);
+  }
+
+  useEffect(() => {
+    if (previewPlayer.libraryQueueSource === 'liked') previewPlayer.refreshLibraryQueue(data.likedSongs);
+    if (previewPlayer.libraryQueueSource === 'favorites') previewPlayer.refreshLibraryQueue(favoriteSongs);
+  }, [data.likedSongs, favoriteSongs, previewPlayer]);
 
   function createPlaylist() {
     const name = newPlaylistName.trim();
@@ -52,7 +61,7 @@ export default function LibraryScreen() {
         <View style={styles.section}>
           <View style={styles.selectionHeader}>
             <Text style={styles.heading}>Liked songs</Text>
-            <View style={styles.headerActions}><Pressable accessibilityRole="button" accessibilityLabel="Shuffle liked previews" onPress={() => playSongs(data.likedSongs, 'shuffle')} style={styles.outlineButton}><Text style={styles.outlineButtonText}>Shuffle</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Play liked previews" onPress={() => playSongs(data.likedSongs)} style={styles.playButton}><Text style={styles.playButtonText}>Play all</Text></Pressable></View>
+            <View style={styles.headerActions}><Pressable accessibilityRole="button" accessibilityLabel="Shuffle liked previews" onPress={() => playSongs(data.likedSongs, 'shuffle', 'liked')} style={styles.outlineButton}><Text style={styles.outlineButtonText}>Shuffle</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Play liked previews" onPress={() => playSongs(data.likedSongs, 'repeat-all', 'liked')} style={styles.playButton}><Text style={styles.playButtonText}>Play all</Text></Pressable></View>
           </View>
           {status === 'loading' ? <Text style={styles.muted}>Loading your library…</Text> : data.likedSongs.length === 0 ? (
             <Text style={styles.empty}>Save a song from your search results to start your library.</Text>
@@ -68,7 +77,7 @@ export default function LibraryScreen() {
         </View>
 
         <View style={styles.section}>
-          <View style={styles.selectionHeader}><Text style={styles.heading}>Favorites</Text><View style={styles.headerActions}><Pressable accessibilityRole="button" accessibilityLabel="Shuffle favorite previews" onPress={() => playSongs(favoriteSongs, 'shuffle')} style={styles.outlineButton}><Text style={styles.outlineButtonText}>Shuffle</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Play favorite previews" onPress={() => playSongs(favoriteSongs)} style={styles.playButton}><Text style={styles.playButtonText}>Play all</Text></Pressable></View></View>
+          <View style={styles.selectionHeader}><Text style={styles.heading}>Favorites</Text><View style={styles.headerActions}><Pressable accessibilityRole="button" accessibilityLabel="Shuffle favorite previews" onPress={() => playSongs(favoriteSongs, 'shuffle', 'favorites')} style={styles.outlineButton}><Text style={styles.outlineButtonText}>Shuffle</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Play favorite previews" onPress={() => playSongs(favoriteSongs, 'repeat-all', 'favorites')} style={styles.playButton}><Text style={styles.playButtonText}>Play all</Text></Pressable></View></View>
           {favoriteSongs.length === 0 ? <Text style={styles.empty}>Tap the star on a liked song to add it to Favorites.</Text> : favoriteSongs.map((song) => <View key={song.id} style={styles.membershipRow}><Text style={styles.membershipTitle}>{song.title} · {song.artist}</Text><Pressable accessibilityRole="button" accessibilityLabel={`Remove ${song.title} from favorites`} onPress={() => toggleFavorite(toToggleableSong(song))}><Text style={styles.favorite}>★</Text></Pressable></View>)}
         </View>
 

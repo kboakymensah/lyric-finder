@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 const nativePlaylist = vi.hoisted(() => ({
   sources: [] as string[],
-  play: vi.fn(), pause: vi.fn(), next: vi.fn(), previous: vi.fn(), seekTo: vi.fn(),
+  play: vi.fn(), pause: vi.fn(), next: vi.fn(), previous: vi.fn(), seekTo: vi.fn(), skipTo: vi.fn(),
 }));
 const nativeStatus = vi.hoisted(() => ({ currentIndex: 0, trackCount: 0, currentTime: 0, duration: 30, playing: false, error: null }));
 
@@ -54,5 +54,17 @@ describe('PreviewPlayerProvider', () => {
 
     expect(rendered.player().queue).toEqual([]);
     expect(nativePlaylist.sources).toEqual([song.previewUrl]);
+  });
+
+  it('refreshes an active library queue without losing the current song', () => {
+    nativeStatus.currentIndex = 1;
+    nativeStatus.currentTime = 12;
+    nativeStatus.playing = true;
+    const rendered = renderPlayer();
+    act(() => rendered.player().startLibraryQueue([song, nextSong], 'liked'));
+    act(() => rendered.player().refreshLibraryQueue([song, nextSong, { ...song, id: '3', title: 'New favorite', previewUrl: 'https://example.com/c.m4a' }]));
+
+    expect(rendered.player().currentSong).toEqual(nextSong);
+    expect(rendered.player().queue).toHaveLength(3);
   });
 });
