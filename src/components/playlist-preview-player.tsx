@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import type { TimedLyricLine } from '../lib/synced-lyrics';
 import type { PlaybackMode } from '../lib/preview-queue';
@@ -69,6 +69,7 @@ export function PlaylistPreviewPlayer({
   isFavorite = false,
   onToggleFavorite = () => {},
 }: PlaylistPreviewPlayerProps) {
+  const [lyricsOpen, setLyricsOpen] = useState(false);
   const duration = Math.max(1, durationSeconds || 30);
   const elapsed = Math.min(Math.max(currentSeconds, 0), duration);
   const progress = useMemo(() => `${(elapsed / duration) * 100}%` as `${number}%`, [duration, elapsed]);
@@ -102,10 +103,24 @@ export function PlaylistPreviewPlayer({
               <Text style={styles.modeText}>{playbackMode === 'shuffle' ? '⇄ Shuffle' : playbackMode === 'repeat-one' ? '↻ Repeat one' : playbackMode === 'repeat-all' ? '↻ Repeat all' : '→ Play once'}</Text>
             </Pressable>
             <Text style={styles.previewNote}>30-SECOND PREVIEW</Text>
-            <SyncedLyrics canHighlight={false} expanded lines={lyricLines} currentSeconds={elapsed} isLoading={lyricLoading} message={lyricMessage} />
+            <Pressable accessibilityRole="button" accessibilityLabel="Open full lyrics" onPress={() => setLyricsOpen(true)} style={styles.lyricsButton}><Text style={styles.lyricsButtonText}>Lyrics ↑</Text></Pressable>
             {elapsed >= 5 && <View style={styles.relatedSection}><Text style={styles.relatedHeading}>MORE LIKE THIS</Text>{relatedLoading ? <Text style={styles.relatedMuted}>Finding related preview songs…</Text> : relatedSongs.length === 0 ? <Text style={styles.relatedMuted}>No related previews available yet.</Text> : relatedSongs.map((song) => <Pressable key={song.id} accessibilityRole="button" accessibilityLabel={`Play related preview ${song.title}`} onPress={() => onPlayRelated(song)} style={styles.relatedSong}><View><Text style={styles.relatedTitle}>{song.title}</Text><Text style={styles.relatedArtist}>{song.artist}</Text></View><Text style={styles.relatedPlay}>▶</Text></Pressable>)}</View>}
           </ScrollView>}
           {message && <Text style={styles.message}>{message}</Text>}
+          <Modal animationType="slide" onRequestClose={() => setLyricsOpen(false)} transparent={false} visible={lyricsOpen}>
+            <SafeAreaView style={styles.lyricsScreen}>
+              <View style={styles.topBar}>
+                <Pressable accessibilityRole="button" accessibilityLabel="Close full lyrics" hitSlop={10} onPress={() => setLyricsOpen(false)}><Text style={styles.close}>⌄</Text></Pressable>
+                <Text style={styles.kicker}>LYRICS</Text>
+                <View style={styles.topSpacer} />
+              </View>
+              <ScrollView contentContainerStyle={styles.lyricsContent} showsVerticalScrollIndicator>
+                <Text style={styles.lyricsTitle}>{currentSong?.title}</Text>
+                <Text style={styles.lyricsArtist}>{currentSong?.artist}</Text>
+                <SyncedLyrics canHighlight={false} expanded lines={lyricLines} currentSeconds={elapsed} isLoading={lyricLoading} message={lyricMessage} />
+              </ScrollView>
+            </SafeAreaView>
+          </Modal>
         </SafeAreaView>
       </Modal>
   );
@@ -116,5 +131,6 @@ const styles = StyleSheet.create({
   songRow: { alignItems: 'center', flexDirection: 'row', gap: 12, marginTop: 12 }, songDetails: { flex: 1 }, title: { color: '#FFF7DF', fontSize: 25, fontWeight: '900' }, artist: { color: '#D8CFB6', fontSize: 18, marginTop: 4 }, starButton: { alignItems: 'center', borderColor: '#625B48', borderRadius: 24, borderWidth: 1, height: 48, justifyContent: 'center', width: 48 }, starActive: { backgroundColor: '#F7C948', borderColor: '#F7C948' }, star: { color: '#F7C948', fontSize: 32 }, starFilled: { color: '#0B0B0A' }, progressTrack: { backgroundColor: '#575141', borderRadius: 5, height: 8, marginTop: 12, overflow: 'hidden' }, progressFill: { backgroundColor: '#F7C948', height: '100%' }, timeRow: { flexDirection: 'row', justifyContent: 'space-between' }, time: { color: '#BDB6A4', fontSize: 13, fontVariant: ['tabular-nums'] },
   controls: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }, control: { alignItems: 'center', height: 52, justifyContent: 'center', width: 48 }, controlText: { color: '#FFF7DF', fontSize: 27 }, playControl: { alignItems: 'center', backgroundColor: '#F7C948', borderRadius: 34, height: 68, justifyContent: 'center', width: 68 }, playText: { color: '#0B0B0A', fontSize: 30, fontWeight: '900', marginLeft: 2 }, disabled: { opacity: 0.25 }, previewNote: { alignSelf: 'center', color: '#BDB6A4', fontSize: 11, fontWeight: '800', letterSpacing: 1.5, marginBottom: 3 }, message: { color: '#FFAAA8', lineHeight: 21, padding: 24 },
   modeButton: { alignSelf: 'center', borderColor: '#625B48', borderRadius: 16, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 }, modeText: { color: '#F7C948', fontSize: 12, fontWeight: '800' },
+  lyricsButton: { alignSelf: 'center', borderColor: '#F7C948', borderRadius: 16, borderWidth: 1, paddingHorizontal: 18, paddingVertical: 10 }, lyricsButtonText: { color: '#F7C948', fontWeight: '900' }, lyricsScreen: { backgroundColor: '#12110E', flex: 1 }, lyricsContent: { gap: 12, padding: 28, paddingBottom: 64 }, lyricsTitle: { color: '#FFF7DF', fontSize: 25, fontWeight: '900' }, lyricsArtist: { color: '#D8CFB6', fontSize: 17, marginBottom: 10 },
   relatedSection: { borderTopColor: '#3B372C', borderTopWidth: 1, gap: 8, marginTop: 8, paddingTop: 16 }, relatedHeading: { color: '#F7C948', fontSize: 12, fontWeight: '900', letterSpacing: 1.5 }, relatedMuted: { color: '#BDB6A4' }, relatedSong: { alignItems: 'center', backgroundColor: '#25231C', borderRadius: 12, flexDirection: 'row', justifyContent: 'space-between', padding: 12 }, relatedTitle: { color: '#FFF7DF', fontWeight: '800' }, relatedArtist: { color: '#BDB6A4', marginTop: 2 }, relatedPlay: { color: '#F7C948', fontSize: 20 },
 });

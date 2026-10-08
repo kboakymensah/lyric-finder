@@ -127,4 +127,25 @@ describe('PlaylistPreviewPlayer', () => {
     act(() => favorite.props.onPress());
     expect(onToggleFavorite).toHaveBeenCalledWith(expect.objectContaining({ id: song.id, title: song.title }));
   });
+
+  it('offers a dedicated full-lyrics view instead of requiring listeners to scroll past player controls', () => {
+    let player: ReturnType<typeof create>;
+    act(() => {
+      player = create(
+        <PlaylistPreviewPlayer
+          canNext={false}
+          canPrevious={false}
+          currentIndex={0}
+          currentSong={song}
+          isPlaying={false}
+          lyricLines={[{ timeSeconds: 0, text: 'A lyric line' }]}
+          message={null}
+          queueLength={1}
+          {...callbacks}
+        />,
+      );
+    });
+
+    expect(player!.root.findByProps({ accessibilityLabel: 'Open full lyrics' })).toBeTruthy();
+  });
 });
