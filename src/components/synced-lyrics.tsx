@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
 import { useEffect, useRef } from 'react';
 
 import { activeLyricIndex, type TimedLyricLine } from '../lib/synced-lyrics';
@@ -6,7 +6,7 @@ import { activeLyricIndex, type TimedLyricLine } from '../lib/synced-lyrics';
 type SyncedLyricsProps = { lines: TimedLyricLine[]; currentSeconds: number; isLoading: boolean; message: string | null; expanded?: boolean; canHighlight?: boolean };
 
 export function SyncedLyrics({ lines, currentSeconds, isLoading, message, expanded = false, canHighlight = true }: SyncedLyricsProps) {
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const activeIndex = canHighlight ? activeLyricIndex(lines, currentSeconds) : null;
   useEffect(() => { if (canHighlight && activeIndex !== null) scrollRef.current?.scrollTo({ y: Math.max(0, (activeIndex * 34) - 68), animated: true }); }, [activeIndex, canHighlight]);
   if (isLoading) return <Text style={styles.muted}>Loading timed lyrics…</Text>;
