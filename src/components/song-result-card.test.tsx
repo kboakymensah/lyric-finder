@@ -9,11 +9,22 @@ vi.mock('react-native', () => ({
   View: 'View',
 }));
 
-import { favoriteGlyph } from './song-result-card';
+import { favoriteGlyph, primaryActionLabels } from './song-result-card';
 
 describe('favorite action', () => {
   it('uses a filled star for songs in Favorites', () => {
     expect(favoriteGlyph(true)).toBe('★');
     expect(favoriteGlyph(false)).toBe('☆');
+  });
+});
+
+describe('primary result actions', () => {
+  it('puts lyrics, preview, and listening before playlist tools', () => {
+    expect(primaryActionLabels).toEqual([
+      'View Lyrics',
+      'Play 30-second Preview',
+      'Listen on…',
+      'Add to Playlist',
+    ]);
   });
 });

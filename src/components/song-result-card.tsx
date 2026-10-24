@@ -22,6 +22,7 @@ type SongResultCardProps = {
 };
 
 export const favoriteGlyph = (isFavorite: boolean) => (isFavorite ? '★' : '☆');
+export const primaryActionLabels = ['View Lyrics', 'Play 30-second Preview', 'Listen on…', 'Add to Playlist'] as const;
 
 export function SongResultCard({
   song,
@@ -94,11 +95,11 @@ export function SongResultCard({
             accessibilityLabel={`View lyrics for ${song.title}`}
             onPress={() => onViewLyrics(song)}
             style={[styles.actionBar, styles.lyricsBar]}>
-            <Text style={styles.actionText}>View Lyrics</Text>
+            <Text style={styles.actionText}>{primaryActionLabels[0]}</Text>
           </Pressable>
           {song.previewUrl ? (
             <Pressable accessibilityRole="button" accessibilityLabel={previewLabel} onPress={onTogglePreview} style={[styles.actionBar, styles.previewBar]}>
-              <Text style={styles.actionText}>{isPlaying ? 'Pause Preview' : 'Play 30-second Preview'}</Text>
+              <Text style={styles.actionText}>{isPlaying ? 'Pause Preview' : primaryActionLabels[1]}</Text>
             </Pressable>
           ) : (
             <Pressable
@@ -114,7 +115,7 @@ export function SongResultCard({
             accessibilityLabel={`Choose where to listen to ${song.title}`}
             onPress={() => setShowListeningPicker((isOpen) => !isOpen)}
             style={[styles.actionBar, styles.listenBar]}>
-            <Text style={[styles.actionText, styles.listenText]}>Listen on…</Text>
+            <Text style={[styles.actionText, styles.listenText]}>{primaryActionLabels[2]}</Text>
           </Pressable>
           {showListeningPicker && (
             <View style={styles.listeningPicker}>
@@ -145,7 +146,7 @@ export function SongResultCard({
               accessibilityLabel={playlistAdded ? `Added ${song.title} to a playlist` : `Add ${song.title} to a playlist`}
               onPress={() => setShowPlaylistPicker((isOpen) => !isOpen)}
               style={styles.playlistPressable}>
-              <Text style={styles.actionText}>{playlistAdded ? 'Added to Playlist ✓' : 'Add to Playlist'}</Text>
+              <Text style={styles.actionText}>{playlistAdded ? 'Added to Playlist ✓' : primaryActionLabels[3]}</Text>
             </Pressable>
           </Animated.View>
           {showPlaylistPicker && (
