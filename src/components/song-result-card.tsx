@@ -19,10 +19,12 @@ type SongResultCardProps = {
   onToggleFavorite?: (song: SongResult) => void;
   playlists?: Playlist[];
   onAddToPlaylist?: (playlistId: string, song: SongResult) => void;
+  onOpenDetails?: (song: SongResult) => void;
 };
 
 export const favoriteGlyph = (isFavorite: boolean) => (isFavorite ? '★' : '☆');
 export const primaryActionLabels = ['View Lyrics', 'Play 30-second Preview', 'Listen on…', 'Add to Playlist'] as const;
+export const detailActionLabel = 'Song Details';
 
 export function SongResultCard({
   song,
@@ -37,6 +39,7 @@ export function SongResultCard({
   onToggleFavorite = () => {},
   playlists = [],
   onAddToPlaylist = () => {},
+  onOpenDetails = () => {},
 }: SongResultCardProps) {
   const [showPlaylistPicker, setShowPlaylistPicker] = useState(false);
   const [showListeningPicker, setShowListeningPicker] = useState(false);
@@ -76,7 +79,7 @@ export function SongResultCard({
 
       <View style={styles.details}>
         <View style={styles.songHeader}>
-          <Text style={styles.title}>{song.title}</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel={`Open details for ${song.title}`} onPress={() => onOpenDetails(song)}><Text style={styles.title}>{song.title}</Text></Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel={isFavorite ? `Remove ${song.title} from favorites` : `Add ${song.title} to favorites`} onPress={() => onToggleFavorite(song)} style={[styles.favoriteButton, isFavorite && styles.favoriteActive]}><Text style={[styles.favoriteSymbol, isFavorite && styles.favoriteSymbolActive]}>{favoriteGlyph(isFavorite)}</Text></Pressable>
           <Pressable
             accessibilityRole="button"
@@ -88,6 +91,7 @@ export function SongResultCard({
         </View>
         <Text style={styles.artist}>{song.artist}</Text>
         {song.lyricSnippet && <Text style={styles.snippet}>“{song.lyricSnippet}”</Text>}
+        <Pressable accessibilityRole="button" accessibilityLabel={`Open details for ${song.title}`} onPress={() => onOpenDetails(song)} style={styles.detailsAction}><Text style={styles.detailsActionText}>{detailActionLabel}  ›</Text></Pressable>
 
         <View style={styles.actions}>
           <Pressable
@@ -232,6 +236,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
   },
+  detailsAction: { alignSelf: 'flex-start', marginTop: 5, paddingVertical: 4 },
+  detailsActionText: { color: '#F7C948', fontSize: 13, fontWeight: '800' },
   actions: {
     gap: 8,
     marginTop: 8,

@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
-import { Link } from 'expo-router';
 import { ActivityIndicator, Keyboard, Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { validateLyrics } from '../../lib/validation';
 import { fetchWithTimeout } from '../../lib/request';
@@ -8,7 +7,8 @@ import { lyricDestination } from '../../lib/genius-links';
 import { enrichMissingCatalog } from '../lib/itunes-catalog';
 import { listeningUrl } from '../lib/listening-platforms';
 import { addRecentSearch, parseRecentSearches, removeRecentSearch } from '../lib/recent-searches';
-import { searchHeaderNavigation } from '../lib/main-navigation';
+import { lyricInputLimit, searchScreenCopy } from '../lib/search-screen';
+import { screenContentBottomInset } from '../components/music-ui';
 import { SongResults } from '../components/song-results';
 import { useLibrary } from '../contexts/library-context';
 import { usePreviewPlayer } from '../contexts/preview-player-context';
@@ -88,17 +88,19 @@ export default function Home() {
       <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
         <View style={s.hero}>
           <View style={s.brandRow}>
-            <View><Text style={s.motif}>♫</Text><Text style={s.kicker}>LYRIC FINDER</Text></View>
-            <Link href={searchHeaderNavigation.href} style={s.libraryLink}>{searchHeaderNavigation.label}</Link>
+            <View style={s.brandMark}><Text style={s.motif}>♫</Text><Text style={s.kicker}>LYRIC FINDER</Text></View>
           </View>
+          <Text style={s.eyebrow}>FIND THE SONG STUCK IN YOUR HEAD</Text>
           <Text style={s.title}>What lyrics do you remember?</Text>
           <Text style={s.subtitle}>A line, a phrase, even a half-remembered chorus.</Text>
         </View>
 
+        <Text style={s.inputLabel}>{searchScreenCopy.inputLabel}</Text>
         <TextInput
-          accessibilityLabel="Lyrics"
+          accessibilityLabel={searchScreenCopy.inputLabel}
           multiline
           blurOnSubmit
+          maxLength={lyricInputLimit}
           onChangeText={setLyrics}
           onSubmitEditing={() => { Keyboard.dismiss(); void search(); }}
           placeholder="Type a line or two you remember…"
@@ -106,18 +108,19 @@ export default function Home() {
           style={s.input}
           value={lyrics}
         />
+        <View style={s.inputMeta}><Text style={s.helper}>{searchScreenCopy.helper}</Text><Text style={s.helper}>{lyrics.length}/{lyricInputLimit}</Text></View>
+        <Pressable accessibilityRole="button" disabled={loading} onPress={() => { void search(); }} style={[s.button, loading && s.buttonDisabled]}>
+          {loading ? <ActivityIndicator color="#0B0B0A" /> : <Text style={s.buttonText}>✦  {searchScreenCopy.submit}</Text>}
+        </Pressable>
         {recentSearches.length > 0 && <View style={s.recentSection}>
-          <Text style={s.recentHeading}>RECENT SEARCHES</Text>
+          <View style={s.recentHeader}><Text style={s.recentTitle}>Recent searches</Text><Text style={s.recentCount}>{recentSearches.length}</Text></View>
           {recentSearches.map((query) => <View key={query} style={s.recentRow}>
-            <Pressable accessibilityRole="button" accessibilityLabel={`Search again for ${query}`} onPress={() => { setLyrics(query); void search(query); }} style={s.recentSearch}><Text numberOfLines={1} style={s.recentText}>{query}</Text></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel={`Search again for ${query}`} onPress={() => { setLyrics(query); void search(query); }} style={s.recentSearch}><Text style={s.searchGlyph}>⌕</Text><Text numberOfLines={1} style={s.recentText}>{query}</Text></Pressable>
             <Pressable accessibilityRole="button" accessibilityLabel={`Remove recent search ${query}`} onPress={() => deleteRecentSearch(query)}><Text style={s.removeRecent}>×</Text></Pressable>
           </View>)}
         </View>}
         {message && <Text style={s.error}>{message}</Text>}
         {libraryError && <Text style={s.error}>{libraryError}</Text>}
-        <Pressable accessibilityRole="button" disabled={loading} onPress={() => { void search(); }} style={[s.button, loading && s.buttonDisabled]}>
-          {loading ? <ActivityIndicator color="#0B0B0A" /> : <Text style={s.buttonText}>Find my song</Text>}
-        </Pressable>
         <SongResults
           songs={songs}
           hasSearched={hasSearched}
@@ -145,13 +148,16 @@ export default function Home() {
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#0B0B0A' },
-  content: { padding: 24, paddingBottom: 148, gap: 16 },
-  hero: { gap: 8, marginTop: 20 },
+  content: { padding: 20, paddingBottom: screenContentBottomInset, gap: 14 },
+  hero: { gap: 9, marginTop: 14 },
   brandRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
-  motif: { color: '#F7C948', fontSize: 22, letterSpacing: 2 },
+  brandMark: { alignItems: 'center', flexDirection: 'row', gap: 9 },
+  motif: { backgroundColor: '#F7C948', borderRadius: 16, color: '#0B0B0A', fontSize: 19, fontWeight: '900', height: 32, lineHeight: 31, textAlign: 'center', width: 32 },
   kicker: { color: '#F7C948', fontWeight: '800', letterSpacing: 2 },
-  title: { color: '#FFF7DF', fontSize: 36, fontWeight: '800', lineHeight: 42 },
+  eyebrow: { color: '#F7C948', fontSize: 11, fontWeight: '900', letterSpacing: 1.4, marginTop: 20 },
+  title: { color: '#FFF7DF', fontSize: 36, fontWeight: '800', letterSpacing: -1.25, lineHeight: 39 },
   subtitle: { color: '#BDB6A4', fontSize: 16, lineHeight: 24 },
+  inputLabel: { color: '#FFF7DF', fontSize: 14, fontWeight: '800', marginTop: 16 },
   input: {
     minHeight: 150,
     color: '#FFF7DF',
@@ -163,15 +169,19 @@ const s = StyleSheet.create({
     textAlignVertical: 'top',
     fontSize: 17,
   },
-  button: { alignItems: 'center', backgroundColor: '#F7C948', borderRadius: 16, padding: 18 },
+  inputMeta: { flexDirection: 'row', justifyContent: 'space-between', marginTop: -6 },
+  helper: { color: '#AAA69C', fontSize: 12 },
+  button: { alignItems: 'center', backgroundColor: '#F7C948', borderRadius: 999, justifyContent: 'center', minHeight: 55 },
   buttonDisabled: { opacity: 0.65 },
   buttonText: { color: '#0B0B0A', fontWeight: '800', fontSize: 17 },
-  libraryLink: { color: '#F7C948', fontSize: 14, fontWeight: '800', paddingVertical: 4 },
   error: { color: '#FFAAA8' },
-  recentSection: { backgroundColor: '#181714', borderColor: '#3B372C', borderRadius: 14, borderWidth: 1, gap: 8, padding: 14 },
-  recentHeading: { color: '#F7C948', fontSize: 12, fontWeight: '800', letterSpacing: 1.2 },
+  recentSection: { backgroundColor: '#181714', borderColor: '#3B372C', borderRadius: 18, borderWidth: 1, gap: 8, marginTop: 12, padding: 14 },
+  recentHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
+  recentTitle: { color: '#FFF7DF', fontSize: 20, fontWeight: '900' },
+  recentCount: { backgroundColor: '#302B1B', borderRadius: 16, color: '#F7C948', fontSize: 12, fontWeight: '900', minWidth: 28, padding: 6, textAlign: 'center' },
   recentRow: { alignItems: 'center', borderTopColor: '#3B372C', borderTopWidth: 1, flexDirection: 'row', gap: 10, paddingTop: 9 },
-  recentSearch: { flex: 1 },
+  recentSearch: { alignItems: 'center', flex: 1, flexDirection: 'row', gap: 10 },
+  searchGlyph: { color: '#AAA69C', fontSize: 18 },
   recentText: { color: '#FFF7DF' },
   removeRecent: { color: '#FFAAA8', fontSize: 23, fontWeight: '700', lineHeight: 23, paddingHorizontal: 5 },
 });

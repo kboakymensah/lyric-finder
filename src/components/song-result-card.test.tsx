@@ -9,7 +9,7 @@ vi.mock('react-native', () => ({
   View: 'View',
 }));
 
-import { favoriteGlyph, primaryActionLabels } from './song-result-card';
+import { detailActionLabel, favoriteGlyph, primaryActionLabels } from './song-result-card';
 
 describe('favorite action', () => {
   it('uses a filled star for songs in Favorites', () => {
@@ -26,5 +26,9 @@ describe('primary result actions', () => {
       'Listen on…',
       'Add to Playlist',
     ]);
+  });
+
+  it('gives every real result a direct Song Details affordance', () => {
+    expect(detailActionLabel).toBe('Song Details');
   });
 });

@@ -18,6 +18,7 @@ type SongResultsProps = {
   onToggleFavorite?: (song: SongResult) => void;
   playlists?: Playlist[];
   onAddToPlaylist?: (playlistId: string, song: SongResult) => void;
+  onOpenDetails?: (song: SongResult) => void;
 };
 
 const noAction = () => {};
@@ -36,6 +37,7 @@ export function SongResults({
   onToggleFavorite = noAction,
   playlists = [],
   onAddToPlaylist = noAction,
+  onOpenDetails = noAction,
 }: SongResultsProps) {
   if (!hasSearched) {
     return null;
@@ -67,6 +69,7 @@ export function SongResults({
         onToggleFavorite={onToggleFavorite}
         playlists={playlists}
         onAddToPlaylist={onAddToPlaylist}
+        onOpenDetails={onOpenDetails}
       />
 
       {alternatives.length > 0 && (
@@ -87,6 +90,7 @@ export function SongResults({
               onToggleFavorite={onToggleFavorite}
               playlists={playlists}
               onAddToPlaylist={onAddToPlaylist}
+              onOpenDetails={onOpenDetails}
             />
           ))}
         </View>
