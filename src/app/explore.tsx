@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { Link, useLocalSearchParams } from 'expo-router';
+import { Link } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -8,10 +8,6 @@ import { usePreviewPlayer } from '../contexts/preview-player-context';
 import type { SavedSong } from '../types/song';
 
 type LibraryView = 'home' | 'liked' | 'favorites' | 'playlists' | 'playlist';
-
-function initialLibraryView(view: string | undefined): LibraryView {
-  return view === 'favorites' || view === 'playlists' ? view : 'home';
-}
 
 export const libraryCollectionDefinitions = [
   { id: 'liked' as const, title: 'Liked Songs', subtitle: 'Every song you saved from a lyric search.', emptyMessage: 'Save a song from your search results to start your library.' },
@@ -32,9 +28,8 @@ function SongRow({ song, favorite, onFavorite, onPlay, trailing }: { song: Saved
   </View>;
 }
 
-export default function LibraryScreen() {
-  const params = useLocalSearchParams<{ view?: string }>();
-  const [view, setView] = useState<LibraryView>(() => initialLibraryView(params.view));
+export function LibraryScreen({ initialView = 'home' }: { initialView?: LibraryView }) {
+  const [view, setView] = useState<LibraryView>(initialView);
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [playlistRename, setPlaylistRename] = useState('');
@@ -42,11 +37,6 @@ export default function LibraryScreen() {
   const player = usePreviewPlayer();
   const favorites = data.likedSongs.filter((song) => data.favoriteSongIds.includes(song.id));
   const playlist = data.playlists.find((item) => item.id === selectedPlaylistId) ?? null;
-
-  useEffect(() => {
-    setSelectedPlaylistId(null);
-    setView(initialLibraryView(params.view));
-  }, [params.view]);
 
   useEffect(() => {
     if (player.libraryQueueSource === 'liked') player.refreshLibraryQueue(data.likedSongs);
@@ -82,6 +72,10 @@ export default function LibraryScreen() {
 
     {view === 'playlist' && playlist && <><View style={styles.playActions}><Pressable accessibilityRole="button" accessibilityLabel={`Play ${playlist.name}`} onPress={() => player.startQueue(playlist.songs)} style={styles.playButton}><Text style={styles.playButtonText}>▶ Play all</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel={`Delete ${playlist.name}`} onPress={() => { removePlaylist(playlist.id); backToLibrary(); }} style={styles.deleteButton}><Text style={styles.delete}>Delete</Text></Pressable></View><View style={styles.section}><Text style={styles.sectionLabel}>RENAME PLAYLIST</Text><View style={styles.renameRow}><TextInput accessibilityLabel={`Rename ${playlist.name}`} onChangeText={setPlaylistRename} placeholder="New playlist name" placeholderTextColor="#BDB6A4" style={styles.renameInput} value={playlistRename} /><Pressable accessibilityRole="button" accessibilityLabel={`Rename ${playlist.name}`} onPress={() => { renamePlaylist(playlist.id, playlistRename); setPlaylistRename(''); }} style={styles.outlineButton}><Text style={styles.outlineButtonText}>Rename</Text></Pressable></View></View><View style={styles.section}>{playlist.songs.length === 0 ? <Text style={styles.empty}>No songs in this playlist yet.</Text> : playlist.songs.map((song) => <SongRow key={song.id} song={song} onPlay={() => player.startSong(toToggleableSong(song))} trailing={<Pressable accessibilityRole="button" accessibilityLabel={`Remove ${song.title} from ${playlist.name}`} onPress={() => removeFromPlaylist(playlist.id, song.id)}><Text style={styles.remove}>Remove</Text></Pressable>} />)}</View><View style={styles.section}><Text style={styles.sectionLabel}>ADD FROM LIKED SONGS</Text>{data.likedSongs.filter((song) => !playlist.songs.some((saved) => saved.id === song.id)).map((song) => <View key={song.id} style={styles.addRow}><Text style={styles.membershipTitle}>{song.title} · {song.artist}</Text><Pressable accessibilityRole="button" accessibilityLabel={`Add ${song.title} to ${playlist.name}`} onPress={() => addToPlaylist(playlist.id, toToggleableSong(song))}><Text style={styles.add}>Add</Text></Pressable></View>)}</View></>}
   </ScrollView></SafeAreaView>;
+}
+
+export default function ExploreScreen() {
+  return <LibraryScreen />;
 }
 
 const styles = StyleSheet.create({

@@ -1,4 +1,4 @@
-import { Link, useGlobalSearchParams, usePathname } from 'expo-router';
+import { Link, usePathname, type Href } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,13 +13,12 @@ const icons: Record<MainNavigationId, string> = {
 
 export function AppBottomNav() {
   const pathname = usePathname();
-  const params = useGlobalSearchParams<{ view?: string }>();
   const insets = useSafeAreaInsets();
   const activeId: MainNavigationId = pathname === '/'
     ? 'search'
-    : params.view === 'favorites'
+    : pathname === '/favorites'
       ? 'favorites'
-      : params.view === 'playlists'
+      : pathname === '/playlists'
         ? 'playlists'
         : 'library';
 
@@ -27,7 +26,7 @@ export function AppBottomNav() {
     <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 10) }]}>
       {mainNavigationItems.map((item) => {
         const active = item.id === activeId;
-        return <Link key={item.id} href={item.href} asChild>
+        return <Link key={item.id} href={item.href as Href} asChild>
           <Pressable accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected: active }} style={styles.item}>
             <Text style={[styles.icon, active && styles.active]}>{icons[item.id]}</Text>
             <Text numberOfLines={1} style={[styles.label, active && styles.active]}>{item.label}</Text>

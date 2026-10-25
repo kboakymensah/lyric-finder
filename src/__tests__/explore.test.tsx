@@ -14,7 +14,7 @@ vi.mock('react-native', () => ({
 vi.mock('../contexts/library-context', () => ({ useLibrary: vi.fn() }));
 vi.mock('../contexts/preview-player-context', () => ({ usePreviewPlayer: vi.fn() }));
 
-import { libraryCollectionDefinitions } from './explore';
+import { libraryCollectionDefinitions } from '../app/explore';
 
 describe('library collection navigation', () => {
   it('defines focused entry points for liked songs, favorites, and playlists', () => {
