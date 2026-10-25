@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
+import { router, type Href } from 'expo-router';
 import { ActivityIndicator, Keyboard, Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { validateLyrics } from '../../lib/validation';
 import { fetchWithTimeout } from '../../lib/request';
@@ -12,6 +13,7 @@ import { screenContentBottomInset } from '../components/music-ui';
 import { SongResults } from '../components/song-results';
 import { useLibrary } from '../contexts/library-context';
 import { usePreviewPlayer } from '../contexts/preview-player-context';
+import { useSongDetails } from '../contexts/song-details-context';
 import type { SongResult } from '../types/song';
 
 export default function Home() {
@@ -22,6 +24,7 @@ export default function Home() {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const previewPlayer = usePreviewPlayer();
+  const { openSong } = useSongDetails();
   const { addToPlaylist, data: library, error: libraryError, isFavorite, isLiked, toggleFavorite, toggleSong } = useLibrary();
 
   useEffect(() => {
@@ -140,6 +143,7 @@ export default function Home() {
           onToggleFavorite={toggleFavorite}
           playlists={library.playlists}
           onAddToPlaylist={addToPlaylist}
+          onOpenDetails={(song) => { openSong(song); router.push('/song' as Href); }}
         />
       </ScrollView>
     </SafeAreaView>
