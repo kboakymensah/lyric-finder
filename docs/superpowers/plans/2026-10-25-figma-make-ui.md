@@ -110,4 +110,3 @@
 - [ ] **Step 5: Manually exercise in Expo Go.** Check lyric search (including loading/error), recent-search reuse, Song Details, save/favorite synchronization, playlist create/add/remove, tab navigation, mini player, and safe-area scrolling.
 - [ ] **Step 6: Commit any verification fixes.** `fix: polish Figma-inspired mobile flow`
 - [ ] **Step 7: Report exact files changed, commands run, results, and any remaining limitation.**
-
