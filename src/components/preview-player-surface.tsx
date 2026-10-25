@@ -1,21 +1,24 @@
 import { Image } from 'expo-image';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useLibrary } from '../contexts/library-context';
 import { usePreviewPlayer } from '../contexts/preview-player-context';
 import { PlaylistPreviewPlayer } from './playlist-preview-player';
+import { bottomNavigationMinimumHeight } from './music-ui';
 
 export function PreviewPlayerSurface() {
   const [isOpen, setIsOpen] = useState(false);
   const player = usePreviewPlayer();
   const library = useLibrary();
+  const insets = useSafeAreaInsets();
   const song = player.currentSong;
 
   if (!song && !player.message) return null;
 
   return (
-    <View pointerEvents="box-none" style={styles.surface}>
+    <View pointerEvents="box-none" style={[styles.surface, { bottom: bottomNavigationMinimumHeight + insets.bottom + 8 }]}>
       {song && <View style={styles.miniPlayer}>
         <Pressable accessibilityRole="button" accessibilityLabel="Open now playing" onPress={() => setIsOpen(true)} style={styles.songButton}>
           {song.artworkUrl ? <Image source={{ uri: song.artworkUrl }} style={styles.artwork} /> : <View style={styles.artworkFallback}><Text style={styles.note}>♫</Text></View>}
@@ -58,7 +61,7 @@ export function PreviewPlayerSurface() {
 }
 
 const styles = StyleSheet.create({
-  surface: { bottom: 76, left: 12, position: 'absolute', right: 12 },
+  surface: { left: 12, position: 'absolute', right: 12 },
   miniPlayer: { alignItems: 'center', backgroundColor: '#25231C', borderColor: '#F7C948', borderRadius: 16, borderWidth: 1, flexDirection: 'row', gap: 6, padding: 9 },
   songButton: { alignItems: 'center', flex: 1, flexDirection: 'row', gap: 10 },
   artwork: { borderRadius: 7, height: 42, width: 42 },

@@ -10,6 +10,7 @@ const player = vi.hoisted(() => ({
 }));
 
 vi.mock('expo-image', () => ({ Image: 'Image' }));
+vi.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ bottom: 0 }) }));
 vi.mock('react-native', () => ({ Pressable: 'Pressable', StyleSheet: { create: <T,>(styles: T) => styles }, Text: 'Text', View: 'View' }));
 vi.mock('../contexts/preview-player-context', () => ({ usePreviewPlayer: () => player }));
 vi.mock('../contexts/library-context', () => ({ useLibrary: () => ({ isFavorite: () => false, toggleFavorite: vi.fn() }) }));

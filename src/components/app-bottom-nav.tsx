@@ -3,6 +3,9 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { mainNavigationItems, type MainNavigationId } from '../lib/main-navigation';
+import { bottomNavigationMinimumHeight } from './music-ui';
+
+export { bottomNavigationMinimumHeight } from './music-ui';
 
 const icons: Record<MainNavigationId, string> = {
   search: '⌕',
@@ -23,7 +26,7 @@ export function AppBottomNav() {
         : 'library';
 
   return <View pointerEvents="box-none" style={styles.surface}>
-    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+    <View style={[styles.bar, { minHeight: bottomNavigationMinimumHeight + insets.bottom, paddingBottom: Math.max(insets.bottom, 10) }]}>
       {mainNavigationItems.map((item) => {
         const active = item.id === activeId;
         return <Link key={item.id} href={item.href as Href} asChild>
