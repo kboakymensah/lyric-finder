@@ -58,7 +58,7 @@ export function PreviewPlayerSurface() {
 }
 
 const styles = StyleSheet.create({
-  surface: { bottom: 12, left: 12, position: 'absolute', right: 12 },
+  surface: { bottom: 76, left: 12, position: 'absolute', right: 12 },
   miniPlayer: { alignItems: 'center', backgroundColor: '#25231C', borderColor: '#F7C948', borderRadius: 16, borderWidth: 1, flexDirection: 'row', gap: 6, padding: 9 },
   songButton: { alignItems: 'center', flex: 1, flexDirection: 'row', gap: 10 },
   artwork: { borderRadius: 7, height: 42, width: 42 },

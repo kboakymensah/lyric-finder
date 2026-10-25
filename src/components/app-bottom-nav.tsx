@@ -1,0 +1,48 @@
+import { Link, useGlobalSearchParams, usePathname } from 'expo-router';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { mainNavigationItems, type MainNavigationId } from '../lib/main-navigation';
+
+const icons: Record<MainNavigationId, string> = {
+  search: '⌕',
+  library: '▣',
+  favorites: '♡',
+  playlists: '☷',
+};
+
+export function AppBottomNav() {
+  const pathname = usePathname();
+  const params = useGlobalSearchParams<{ view?: string }>();
+  const insets = useSafeAreaInsets();
+  const activeId: MainNavigationId = pathname === '/'
+    ? 'search'
+    : params.view === 'favorites'
+      ? 'favorites'
+      : params.view === 'playlists'
+        ? 'playlists'
+        : 'library';
+
+  return <View pointerEvents="box-none" style={styles.surface}>
+    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+      {mainNavigationItems.map((item) => {
+        const active = item.id === activeId;
+        return <Link key={item.id} href={item.href} asChild>
+          <Pressable accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected: active }} style={styles.item}>
+            <Text style={[styles.icon, active && styles.active]}>{icons[item.id]}</Text>
+            <Text numberOfLines={1} style={[styles.label, active && styles.active]}>{item.label}</Text>
+          </Pressable>
+        </Link>;
+      })}
+    </View>
+  </View>;
+}
+
+const styles = StyleSheet.create({
+  surface: { bottom: 0, left: 0, position: 'absolute', right: 0 },
+  bar: { backgroundColor: '#11110F', borderTopColor: '#3B372C', borderTopWidth: 1, flexDirection: 'row', paddingHorizontal: 8, paddingTop: 9 },
+  item: { alignItems: 'center', flex: 1, gap: 2, minHeight: 44 },
+  icon: { color: '#A39D8E', fontSize: 23, fontWeight: '900', lineHeight: 25 },
+  label: { color: '#A39D8E', fontSize: 10, fontWeight: '800' },
+  active: { color: '#F7C948' },
+});

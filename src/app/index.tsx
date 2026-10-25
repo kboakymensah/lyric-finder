@@ -8,6 +8,7 @@ import { lyricDestination } from '../../lib/genius-links';
 import { enrichMissingCatalog } from '../lib/itunes-catalog';
 import { listeningUrl } from '../lib/listening-platforms';
 import { addRecentSearch, parseRecentSearches, removeRecentSearch } from '../lib/recent-searches';
+import { searchHeaderNavigation } from '../lib/main-navigation';
 import { SongResults } from '../components/song-results';
 import { useLibrary } from '../contexts/library-context';
 import { usePreviewPlayer } from '../contexts/preview-player-context';
@@ -86,8 +87,10 @@ export default function Home() {
     <SafeAreaView style={s.screen}>
       <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
         <View style={s.hero}>
-          <Text style={s.motif}>♪  ✎  ♫</Text>
-          <Text style={s.kicker}>LYRIC FINDER</Text>
+          <View style={s.brandRow}>
+            <View><Text style={s.motif}>♫</Text><Text style={s.kicker}>LYRIC FINDER</Text></View>
+            <Link href={searchHeaderNavigation.href} style={s.libraryLink}>{searchHeaderNavigation.label}</Link>
+          </View>
           <Text style={s.title}>What lyrics do you remember?</Text>
           <Text style={s.subtitle}>A line, a phrase, even a half-remembered chorus.</Text>
         </View>
@@ -115,8 +118,6 @@ export default function Home() {
         <Pressable accessibilityRole="button" disabled={loading} onPress={() => { void search(); }} style={[s.button, loading && s.buttonDisabled]}>
           {loading ? <ActivityIndicator color="#0B0B0A" /> : <Text style={s.buttonText}>Find my song</Text>}
         </Pressable>
-        <Link href="/explore" style={s.libraryLink}>Open my library</Link>
-
         <SongResults
           songs={songs}
           hasSearched={hasSearched}
@@ -144,9 +145,10 @@ export default function Home() {
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#0B0B0A' },
-  content: { padding: 24, paddingBottom: 48, gap: 16 },
+  content: { padding: 24, paddingBottom: 148, gap: 16 },
   hero: { gap: 8, marginTop: 20 },
-  motif: { color: '#F7C948', fontSize: 22, letterSpacing: 5 },
+  brandRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
+  motif: { color: '#F7C948', fontSize: 22, letterSpacing: 2 },
   kicker: { color: '#F7C948', fontWeight: '800', letterSpacing: 2 },
   title: { color: '#FFF7DF', fontSize: 36, fontWeight: '800', lineHeight: 42 },
   subtitle: { color: '#BDB6A4', fontSize: 16, lineHeight: 24 },
@@ -164,7 +166,7 @@ const s = StyleSheet.create({
   button: { alignItems: 'center', backgroundColor: '#F7C948', borderRadius: 16, padding: 18 },
   buttonDisabled: { opacity: 0.65 },
   buttonText: { color: '#0B0B0A', fontWeight: '800', fontSize: 17 },
-  libraryLink: { alignSelf: 'center', color: '#F7C948', fontSize: 16, fontWeight: '800', paddingVertical: 4 },
+  libraryLink: { color: '#F7C948', fontSize: 14, fontWeight: '800', paddingVertical: 4 },
   error: { color: '#FFAAA8' },
   recentSection: { backgroundColor: '#181714', borderColor: '#3B372C', borderRadius: 14, borderWidth: 1, gap: 8, padding: 14 },
   recentHeading: { color: '#F7C948', fontSize: 12, fontWeight: '800', letterSpacing: 1.2 },
