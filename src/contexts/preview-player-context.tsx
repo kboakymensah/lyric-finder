@@ -6,15 +6,26 @@ import { fetchWithTimeout } from '../../lib/request';
 import { buildPreviewQueue, clampPreviewSeek, shufflePreviewQueue, type PlaybackMode } from '../lib/preview-queue';
 import { findRelatedSongs } from '../lib/related-songs';
 import { addRecentlyPlayed, parseRecentlyPlayed } from '../lib/recently-played';
+import { parseLrclibLyrics } from '../lib/lyric-fallback';
 import type { TimedLyricLine } from '../lib/synced-lyrics';
 import type { SavedSong, SongResult } from '../types/song';
 
 type PlayableSong = SongResult | SavedSong;
 type LibraryQueueSource = 'liked' | 'favorites';
+const emptyLyrics = { lines: [] as TimedLyricLine[], plainLyrics: null as string | null };
+
+async function fetchDirectLyrics(title: string, artist: string) {
+  const url = new URL('https://lrclib.net/api/get');
+  url.searchParams.set('track_name', title);
+  url.searchParams.set('artist_name', artist);
+  const response = await fetchWithTimeout(url, { headers: { 'Lrclib-Client': 'LyricFinder/1.0 (https://github.com/kboakymensah/lyric-finder)' } });
+  if (!response.ok) return emptyLyrics;
+  return parseLrclibLyrics(await response.json() as Record<string, unknown>);
+}
 type PreviewPlayerValue = {
   currentSong: PlayableSong | null; currentIndex: number; queue: SavedSong[]; canNext: boolean; canPrevious: boolean;
   isPlaying: boolean; message: string | null; currentSeconds: number; durationSeconds: number; playbackMode: PlaybackMode;
-  lyricLines: TimedLyricLine[]; lyricLoading: boolean; lyricMessage: string | null; relatedSongs: SongResult[]; relatedLoading: boolean; recentlyPlayed: SavedSong[];
+  lyricLines: TimedLyricLine[]; plainLyrics: string | null; lyricLoading: boolean; lyricMessage: string | null; relatedSongs: SongResult[]; relatedLoading: boolean; recentlyPlayed: SavedSong[];
   libraryQueueSource: LibraryQueueSource | null; startSong(song: SongResult): void; startQueue(songs: SavedSong[]): void; startLibraryQueue(songs: SavedSong[], source: LibraryQueueSource): void; refreshLibraryQueue(songs: SavedSong[]): void; toggleSong(song: SongResult): void; toggle(): void;
   next(): void; previous(): void; seekBy(seconds: number): Promise<void>; setPlaybackMode(mode: PlaybackMode): void; cyclePlaybackMode(): void;
 };
@@ -32,6 +43,7 @@ export function PreviewPlayerProvider({ children }: { children: ReactNode }) {
   const [message, setMessage] = useState<string | null>(null);
   const [playbackMode, setPlaybackMode] = useState<PlaybackMode>('repeat-all');
   const [lyricLines, setLyricLines] = useState<TimedLyricLine[]>([]);
+  const [plainLyrics, setPlainLyrics] = useState<string | null>(null);
   const [lyricLoading, setLyricLoading] = useState(false);
   const [lyricMessage, setLyricMessage] = useState<string | null>(null);
   const [relatedSongs, setRelatedSongs] = useState<SongResult[]>([]);
@@ -132,14 +144,20 @@ export function PreviewPlayerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!currentSong?.previewUrl) return;
     const request = ++lyricRequest.current; const base = process.env.EXPO_PUBLIC_API_BASE_URL;
-    setLyricLines([]); setLyricMessage(null);
-    if (!base) { setLyricMessage('Timed lyrics aren’t available for this song.'); return; }
+    setLyricLines([]); setPlainLyrics(null); setLyricMessage(null);
     setLyricLoading(true);
-    fetchWithTimeout(`${base}/lyrics`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ title: currentSong.title, artist: currentSong.artist }) })
-      .then((response) => response.ok ? response.json() : { lines: [] })
-      .then((body) => { if (request !== lyricRequest.current) return; const lines = Array.isArray(body.lines) ? body.lines : []; setLyricLines(lines); if (!lines.length) setLyricMessage('Timed lyrics aren’t available for this song.'); })
-      .catch(() => { if (request === lyricRequest.current) setLyricMessage('Timed lyrics aren’t available for this song.'); })
-      .finally(() => { if (request === lyricRequest.current) setLyricLoading(false); });
+    void (async () => {
+      try {
+        const workerResponse = base ? await fetchWithTimeout(`${base}/lyrics`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ title: currentSong.title, artist: currentSong.artist }) }) : null;
+        const workerBody = workerResponse?.ok ? await workerResponse.json() as Record<string, unknown> : emptyLyrics;
+        let lines = Array.isArray(workerBody.lines) ? workerBody.lines as TimedLyricLine[] : [];
+        let plain = typeof workerBody.plainLyrics === 'string' && workerBody.plainLyrics.trim() ? workerBody.plainLyrics.trim() : null;
+        if (!lines.length && !plain) ({ lines, plainLyrics: plain } = await fetchDirectLyrics(currentSong.title, currentSong.artist));
+        if (request !== lyricRequest.current) return;
+        setLyricLines(lines); setPlainLyrics(plain); if (!lines.length && !plain) setLyricMessage('Lyrics aren’t available for this song.');
+      } catch { if (request === lyricRequest.current) setLyricMessage('Lyrics aren’t available for this song.'); }
+      finally { if (request === lyricRequest.current) setLyricLoading(false); }
+    })();
   }, [currentSong?.id, currentSong?.previewUrl]);
   useEffect(() => {
     if (!currentSong) { setRelatedSongs([]); return; }
@@ -148,6 +166,6 @@ export function PreviewPlayerProvider({ children }: { children: ReactNode }) {
     return () => { active = false; };
   }, [currentSong?.id]);
 
-  return <PreviewPlayerContext.Provider value={{ currentSong, currentIndex, queue, canNext, canPrevious, isPlaying: status.playing, message, currentSeconds: status.currentTime, durationSeconds: status.duration || 30, playbackMode, lyricLines, lyricLoading, lyricMessage, relatedSongs, relatedLoading, recentlyPlayed, libraryQueueSource, startSong, startQueue, startLibraryQueue, refreshLibraryQueue, toggleSong, toggle, next, previous, seekBy, setPlaybackMode: setMode, cyclePlaybackMode }}>{children}</PreviewPlayerContext.Provider>;
+  return <PreviewPlayerContext.Provider value={{ currentSong, currentIndex, queue, canNext, canPrevious, isPlaying: status.playing, message, currentSeconds: status.currentTime, durationSeconds: status.duration || 30, playbackMode, lyricLines, plainLyrics, lyricLoading, lyricMessage, relatedSongs, relatedLoading, recentlyPlayed, libraryQueueSource, startSong, startQueue, startLibraryQueue, refreshLibraryQueue, toggleSong, toggle, next, previous, seekBy, setPlaybackMode: setMode, cyclePlaybackMode }}>{children}</PreviewPlayerContext.Provider>;
 }
 export function usePreviewPlayer() { const value = useContext(PreviewPlayerContext); if (!value) throw new Error('usePreviewPlayer must be used inside PreviewPlayerProvider'); return value; }

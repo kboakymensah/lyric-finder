@@ -8,13 +8,21 @@ describe('lookupSyncedLyrics', () => {
     const fetcher = vi.fn(async () => new Response(JSON.stringify({ syncedLyrics: '[00:01.50]Hello\n[00:10.00]World' })));
     await expect(lookupSyncedLyrics('Hello', 'Adele', fetcher as typeof fetch)).resolves.toEqual({
       lines: [{ timeSeconds: 1.5, text: 'Hello' }, { timeSeconds: 10, text: 'World' }],
+      plainLyrics: null,
     });
-    expect(fetcher).toHaveBeenCalledWith(expect.objectContaining({ pathname: '/api/get' }), expect.any(Object));
+    expect(fetcher).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ headers: expect.objectContaining({ 'User-Agent': 'LyricFinder/1.0 (https://github.com/kboakymensah/lyric-finder)' }) }));
   });
 
   it('returns no lines when LRCLIB has no synced lyrics or fails', async () => {
-    await expect(lookupSyncedLyrics('Hello', 'Adele', async () => new Response(JSON.stringify({})) as Response)).resolves.toEqual({ lines: [] });
-    await expect(lookupSyncedLyrics('Hello', 'Adele', async () => new Response('', { status: 503 }) as Response)).resolves.toEqual({ lines: [] });
+    await expect(lookupSyncedLyrics('Hello', 'Adele', async () => new Response(JSON.stringify({})) as Response)).resolves.toEqual({ lines: [], plainLyrics: null });
+    await expect(lookupSyncedLyrics('Hello', 'Adele', async () => new Response('', { status: 503 }) as Response)).resolves.toEqual({ lines: [], plainLyrics: null });
+  });
+
+  it('returns provider plain lyrics when timestamped lyrics are unavailable', async () => {
+    await expect(lookupSyncedLyrics('Hello', 'Adele', async () => new Response(JSON.stringify({ plainLyrics: 'Hello, it is me' })) as Response)).resolves.toEqual({
+      lines: [],
+      plainLyrics: 'Hello, it is me',
+    });
   });
 });
 

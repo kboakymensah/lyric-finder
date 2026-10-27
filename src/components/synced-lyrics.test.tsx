@@ -22,6 +22,13 @@ describe('SyncedLyrics', () => {
     expect(panel!.root.findByProps({ children: 'Second' })).toBeTruthy();
   });
 
+  it('renders plain provider lyrics when timed lyrics are unavailable', () => {
+    let panel: ReturnType<typeof create>;
+    act(() => { panel = create(<SyncedLyrics lines={[]} currentSeconds={0} isLoading={false} message="Timed lyrics aren’t available for this song." plainLyrics="Hello, it is me" />); });
+    expect(panel!.root.findByProps({ children: 'Hello, it is me' })).toBeTruthy();
+    expect(() => panel!.root.findByProps({ children: 'Timed lyrics aren’t available for this song.' })).toThrow();
+  });
+
   it('does not pretend an unknown excerpt offset is line-synced', () => {
     let panel: ReturnType<typeof create>;
     act(() => { panel = create(<SyncedLyrics canHighlight={false} lines={lines} currentSeconds={10} isLoading={false} message={null} />); });

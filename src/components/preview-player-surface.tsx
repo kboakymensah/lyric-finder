@@ -44,6 +44,7 @@ export function PreviewPlayerSurface() {
         onToggleFavorite={library.toggleFavorite}
         isPlaying={player.isPlaying}
         lyricLines={player.lyricLines}
+        plainLyrics={player.plainLyrics}
         lyricLoading={player.lyricLoading}
         lyricMessage={player.lyricMessage}
         message={player.message}

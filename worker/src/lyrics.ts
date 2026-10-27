@@ -18,16 +18,16 @@ function parseLines(value: string | null | undefined): TimedLyricLine[] {
   return lines.sort((a, b) => a.timeSeconds - b.timeSeconds).slice(0, 500);
 }
 
-export async function lookupSyncedLyrics(title: string, artist: string, fetcher: Fetcher = fetch): Promise<{ lines: TimedLyricLine[] }> {
+export async function lookupSyncedLyrics(title: string, artist: string, fetcher: Fetcher = fetch): Promise<{ lines: TimedLyricLine[]; plainLyrics: string | null }> {
   try {
     const url = new URL('https://lrclib.net/api/get');
     url.searchParams.set('track_name', title);
     url.searchParams.set('artist_name', artist);
-    const response = await fetcher(url, { headers: { 'Lrclib-Client': 'LyricFinder/1.0' } });
-    if (!response.ok) return { lines: [] };
-    const body = await response.json() as { syncedLyrics?: string | null };
-    return { lines: parseLines(body.syncedLyrics) };
+    const response = await fetcher(url, { headers: { 'User-Agent': 'LyricFinder/1.0 (https://github.com/kboakymensah/lyric-finder)' } });
+    if (!response.ok) return { lines: [], plainLyrics: null };
+    const body = await response.json() as { plainLyrics?: string | null; syncedLyrics?: string | null };
+    return { lines: parseLines(body.syncedLyrics), plainLyrics: body.plainLyrics?.trim() || null };
   } catch {
-    return { lines: [] };
+    return { lines: [], plainLyrics: null };
   }
 }
