@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { mainNavigationItems, type MainNavigationId } from '../lib/main-navigation';
+import { persistentNavigationSurfaceStyle } from '../lib/persistent-navigation';
 import { bottomNavigationMinimumHeight } from './music-ui';
 
 export { bottomNavigationMinimumHeight } from './music-ui';
@@ -25,7 +26,7 @@ export function AppBottomNav() {
         ? 'playlists'
         : 'library';
 
-  return <View pointerEvents="box-none" style={styles.surface}>
+  return <View pointerEvents="box-none" style={[styles.surface, persistentNavigationSurfaceStyle]}>
     <View style={[styles.bar, { minHeight: bottomNavigationMinimumHeight + insets.bottom, paddingBottom: Math.max(insets.bottom, 10) }]}>
       {mainNavigationItems.map((item) => {
         const active = item.id === activeId;
@@ -41,7 +42,7 @@ export function AppBottomNav() {
 }
 
 const styles = StyleSheet.create({
-  surface: { bottom: 0, left: 0, position: 'absolute', right: 0 },
+  surface: {},
   bar: { backgroundColor: '#11110F', borderTopColor: '#3B372C', borderTopWidth: 1, flexDirection: 'row', paddingHorizontal: 8, paddingTop: 9 },
   item: { alignItems: 'center', flex: 1, gap: 2, minHeight: 44 },
   icon: { color: '#A39D8E', fontSize: 23, fontWeight: '900', lineHeight: 25 },

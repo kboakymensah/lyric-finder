@@ -1,5 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { artistsFromSongMatches } from '../lib/artist-discovery';
 import type { Playlist } from '../lib/library';
 import type { ListeningPlatform } from '../lib/listening-platforms';
 import { SongResultCard } from './song-result-card';
@@ -19,6 +20,7 @@ type SongResultsProps = {
   playlists?: Playlist[];
   onAddToPlaylist?: (playlistId: string, song: SongResult) => void;
   onOpenDetails?: (song: SongResult) => void;
+  onOpenArtist?: (artist: string) => void;
 };
 
 const noAction = () => {};
@@ -38,6 +40,7 @@ export function SongResults({
   playlists = [],
   onAddToPlaylist = noAction,
   onOpenDetails = noAction,
+  onOpenArtist = noAction,
 }: SongResultsProps) {
   if (!hasSearched) {
     return null;
@@ -52,6 +55,7 @@ export function SongResults({
   }
 
   const [bestMatch, ...alternatives] = songs;
+  const artists = artistsFromSongMatches(songs);
 
   return (
     <View style={styles.results}>
@@ -71,6 +75,17 @@ export function SongResults({
         onAddToPlaylist={onAddToPlaylist}
         onOpenDetails={onOpenDetails}
       />
+
+      {artists.length > 0 && <View style={styles.artistSection}>
+        <Text style={styles.heading}>Artists in these matches</Text>
+        <Text style={styles.artistHelper}>Explore the artists from your real lyric matches.</Text>
+        <View style={styles.artistList}>
+          {artists.map((artist) => <Pressable accessibilityRole="button" accessibilityLabel={`Explore ${artist}`} key={artist} onPress={() => onOpenArtist(artist)} style={styles.artistChip}>
+            <Text numberOfLines={1} style={styles.artistChipText}>{artist}</Text>
+            <Text style={styles.artistArrow}>›</Text>
+          </Pressable>)}
+        </View>
+      </View>}
 
       {alternatives.length > 0 && (
         <View style={styles.alternatives}>
@@ -107,6 +122,12 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 12,
   },
+  artistSection: { gap: 8, marginTop: 4 },
+  artistHelper: { color: '#AAA69C', fontSize: 13, lineHeight: 19 },
+  artistList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  artistChip: { alignItems: 'center', backgroundColor: '#181714', borderColor: '#3B372C', borderRadius: 999, borderWidth: 1, flexDirection: 'row', gap: 7, maxWidth: '100%', paddingHorizontal: 13, paddingVertical: 10 },
+  artistChipText: { color: '#FFF7DF', fontSize: 14, fontWeight: '800', maxWidth: 210 },
+  artistArrow: { color: '#F7C948', fontSize: 21, fontWeight: '700', lineHeight: 18 },
   emptyState: {
     backgroundColor: '#181714',
     borderColor: '#3B372C',
