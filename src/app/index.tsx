@@ -8,7 +8,7 @@ import { lyricDestination } from '../../lib/genius-links';
 import { enrichMissingCatalog } from '../lib/itunes-catalog';
 import { listeningUrl } from '../lib/listening-platforms';
 import { addRecentSearch, parseRecentSearches, removeRecentSearch } from '../lib/recent-searches';
-import { lyricInputLimit, searchScreenCopy } from '../lib/search-screen';
+import { lyricHookPrompts, lyricInputLimit, searchScreenCopy } from '../lib/search-screen';
 import { screenContentBottomInset } from '../components/music-ui';
 import { SongResults } from '../components/song-results';
 import { useLibrary } from '../contexts/library-context';
@@ -112,6 +112,15 @@ export default function Home() {
           value={lyrics}
         />
         <View style={s.inputMeta}><Text style={s.helper}>{searchScreenCopy.helper}</Text><Text style={s.helper}>{lyrics.length}/{lyricInputLimit}</Text></View>
+        <View style={s.hookSection}>
+          <Text style={s.hookLabel}>Need a starting point?</Text>
+          <Text style={s.hookHelper}>Try a repeated sound or memory fragment, then make it your own.</Text>
+          <View style={s.hookList}>
+            {lyricHookPrompts.map((prompt) => <Pressable accessibilityRole="button" accessibilityLabel={`Use lyric starter ${prompt}`} key={prompt} onPress={() => setLyrics(prompt)} style={s.hookChip}>
+              <Text style={s.hookChipText}>{prompt}</Text>
+            </Pressable>)}
+          </View>
+        </View>
         <Pressable accessibilityRole="button" disabled={loading} onPress={() => { void search(); }} style={[s.button, loading && s.buttonDisabled]}>
           {loading ? <ActivityIndicator color="#0B0B0A" /> : <Text style={s.buttonText}>✦  {searchScreenCopy.submit}</Text>}
         </Pressable>
@@ -144,6 +153,7 @@ export default function Home() {
           playlists={library.playlists}
           onAddToPlaylist={addToPlaylist}
           onOpenDetails={(song) => { openSong(song); router.push('/song' as Href); }}
+          onOpenArtist={(artist) => openExternal(`https://music.apple.com/us/search?term=${encodeURIComponent(artist)}`, 'That artist page could not be opened.')}
         />
       </ScrollView>
     </SafeAreaView>
@@ -175,6 +185,12 @@ const s = StyleSheet.create({
   },
   inputMeta: { flexDirection: 'row', justifyContent: 'space-between', marginTop: -6 },
   helper: { color: '#AAA69C', fontSize: 12 },
+  hookSection: { backgroundColor: '#12120F', borderColor: '#302D24', borderRadius: 14, borderWidth: 1, gap: 6, padding: 12 },
+  hookLabel: { color: '#FFF7DF', fontSize: 14, fontWeight: '800' },
+  hookHelper: { color: '#AAA69C', fontSize: 12, lineHeight: 17 },
+  hookList: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  hookChip: { backgroundColor: '#242116', borderColor: '#524523', borderRadius: 999, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 8 },
+  hookChipText: { color: '#F7C948', fontSize: 12, fontWeight: '800' },
   button: { alignItems: 'center', backgroundColor: '#F7C948', borderRadius: 999, justifyContent: 'center', minHeight: 55 },
   buttonDisabled: { opacity: 0.65 },
   buttonText: { color: '#0B0B0A', fontWeight: '800', fontSize: 17 },
