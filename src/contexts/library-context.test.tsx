@@ -9,6 +9,7 @@ const { storage } = vi.hoisted(() => ({
 }));
 
 vi.mock('@react-native-async-storage/async-storage', () => ({ default: storage }));
+vi.mock('react-native', () => ({ Vibration: { vibrate: vi.fn() } }));
 
 import { LibraryProvider, useLibrary } from './library-context';
 

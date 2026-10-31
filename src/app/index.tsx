@@ -9,26 +9,34 @@ import { enrichMissingCatalog } from '../lib/itunes-catalog';
 import { listeningUrl } from '../lib/listening-platforms';
 import { addRecentSearch, parseRecentSearches, removeRecentSearch } from '../lib/recent-searches';
 import { lyricHookPrompts, lyricInputLimit, searchScreenCopy } from '../lib/search-screen';
+import { addSearchMemory, parseSearchMemories, type SearchMemory } from '../lib/search-memories';
 import { screenContentBottomInset } from '../components/music-ui';
 import { SongResults } from '../components/song-results';
 import { useLibrary } from '../contexts/library-context';
 import { usePreviewPlayer } from '../contexts/preview-player-context';
 import { useSongDetails } from '../contexts/song-details-context';
 import type { SongResult } from '../types/song';
+import { useBottomNavigationScroll } from '../hooks/use-bottom-navigation-scroll';
+
+const SEARCH_MEMORY_STORAGE_KEY = '@lyric-finder/search-memories-v1';
 
 export default function Home() {
   const [lyrics, setLyrics] = useState('');
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [memoryPlace, setMemoryPlace] = useState('');
+  const [searchMemories, setSearchMemories] = useState<SearchMemory[]>([]);
   const [songs, setSongs] = useState<SongResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const previewPlayer = usePreviewPlayer();
+  const onScroll = useBottomNavigationScroll();
   const { openSong } = useSongDetails();
   const { addToPlaylist, data: library, error: libraryError, isFavorite, isLiked, toggleFavorite, toggleSong } = useLibrary();
 
   useEffect(() => {
     void AsyncStorage.getItem('@lyric-finder/recent-searches-v1').then((stored) => setRecentSearches(stored ? parseRecentSearches(stored) : [])).catch(() => setRecentSearches([]));
+    void AsyncStorage.getItem(SEARCH_MEMORY_STORAGE_KEY).then((stored) => setSearchMemories(stored ? parseSearchMemories(stored) : [])).catch(() => setSearchMemories([]));
   }, []);
 
   function saveRecentSearch(query: string) {
@@ -43,6 +51,13 @@ export default function Home() {
     void AsyncStorage.setItem('@lyric-finder/recent-searches-v1', JSON.stringify(next));
   }
 
+  function saveSearchMemory(query: string, place: string) {
+    const next = addSearchMemory(searchMemories, query, place);
+    if (next === searchMemories) return;
+    setSearchMemories(next);
+    void AsyncStorage.setItem(SEARCH_MEMORY_STORAGE_KEY, JSON.stringify(next));
+  }
+
   async function openExternal(url: string | null, unavailableMessage: string) {
     if (!url) return setMessage(unavailableMessage);
 
@@ -54,7 +69,7 @@ export default function Home() {
     }
   }
 
-  async function search(query = lyrics) {
+  async function search(query = lyrics, place = memoryPlace) {
     const error = validateLyrics(query);
     if (error) return setMessage(error);
     const base = process.env.EXPO_PUBLIC_API_BASE_URL;
@@ -79,6 +94,7 @@ export default function Home() {
       setSongs(results);
       setHasSearched(true);
       saveRecentSearch(query);
+      saveSearchMemory(query, place);
     } catch (e) {
       setMessage(e instanceof Error ? e.message : 'Search is temporarily unavailable.');
     } finally {
@@ -88,7 +104,7 @@ export default function Home() {
 
   return (
     <SafeAreaView style={s.screen}>
-      <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" onScroll={onScroll} scrollEventThrottle={16}>
         <View style={s.hero}>
           <View style={s.brandRow}>
             <View style={s.brandMark}><Text style={s.motif}>♫</Text><Text style={s.kicker}>LYRIC FINDER</Text></View>
@@ -113,7 +129,7 @@ export default function Home() {
         />
         <View style={s.inputMeta}><Text style={s.helper}>{searchScreenCopy.helper}</Text><Text style={s.helper}>{lyrics.length}/{lyricInputLimit}</Text></View>
         <View style={s.hookSection}>
-          <Text style={s.hookLabel}>Need a starting point?</Text>
+          <Text style={s.hookLabel}>Popular-style lyric hooks</Text>
           <Text style={s.hookHelper}>Try a repeated sound or memory fragment, then make it your own.</Text>
           <View style={s.hookList}>
             {lyricHookPrompts.map((prompt) => <Pressable accessibilityRole="button" accessibilityLabel={`Use lyric starter ${prompt}`} key={prompt} onPress={() => setLyrics(prompt)} style={s.hookChip}>
@@ -121,15 +137,24 @@ export default function Home() {
             </Pressable>)}
           </View>
         </View>
+        <View style={s.memorySection}>
+          <Text style={s.memoryLabel}>Where did this song find you? <Text style={s.optional}>(optional)</Text></Text>
+          <Text style={s.memoryHelper}>Save a place or moment with this lyric search, then open it in Maps from Recent searches.</Text>
+          <TextInput accessibilityLabel="Memory place or moment" onChangeText={setMemoryPlace} placeholder="e.g. Walking in the park" placeholderTextColor="#AAA69C" style={s.memoryInput} value={memoryPlace} />
+        </View>
         <Pressable accessibilityRole="button" disabled={loading} onPress={() => { void search(); }} style={[s.button, loading && s.buttonDisabled]}>
           {loading ? <ActivityIndicator color="#0B0B0A" /> : <Text style={s.buttonText}>✦  {searchScreenCopy.submit}</Text>}
         </Pressable>
         {recentSearches.length > 0 && <View style={s.recentSection}>
           <View style={s.recentHeader}><Text style={s.recentTitle}>Recent searches</Text><Text style={s.recentCount}>{recentSearches.length}</Text></View>
-          {recentSearches.map((query) => <View key={query} style={s.recentRow}>
-            <Pressable accessibilityRole="button" accessibilityLabel={`Search again for ${query}`} onPress={() => { setLyrics(query); void search(query); }} style={s.recentSearch}><Text style={s.searchGlyph}>⌕</Text><Text numberOfLines={1} style={s.recentText}>{query}</Text></Pressable>
+          {recentSearches.map((query) => {
+            const memory = searchMemories.find((item) => item.query.toLocaleLowerCase() === query.toLocaleLowerCase());
+            return <View key={query} style={s.recentRow}>
+            <Pressable accessibilityRole="button" accessibilityLabel={`Search again for ${query}`} onPress={() => { setLyrics(query); setMemoryPlace(memory?.place ?? ''); void search(query, memory?.place ?? ''); }} style={s.recentSearch}><Text style={s.searchGlyph}>⌕</Text><View style={s.recentCopy}><Text numberOfLines={1} style={s.recentText}>{query}</Text>{memory && <Text numberOfLines={1} style={s.memoryText}>⌖ {memory.place}</Text>}</View></Pressable>
+            {memory && <Pressable accessibilityRole="button" accessibilityLabel={`View ${memory.place} in Maps`} onPress={() => { void openExternal(`https://maps.apple.com/?q=${encodeURIComponent(memory.place)}`, 'Maps could not be opened for this memory.'); }}><Text style={s.mapLink}>Map</Text></Pressable>}
             <Pressable accessibilityRole="button" accessibilityLabel={`Remove recent search ${query}`} onPress={() => deleteRecentSearch(query)}><Text style={s.removeRecent}>×</Text></Pressable>
-          </View>)}
+          </View>;
+          })}
         </View>}
         {message && <Text style={s.error}>{message}</Text>}
         {libraryError && <Text style={s.error}>{libraryError}</Text>}
@@ -191,6 +216,11 @@ const s = StyleSheet.create({
   hookList: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   hookChip: { backgroundColor: '#242116', borderColor: '#524523', borderRadius: 999, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 8 },
   hookChipText: { color: '#F7C948', fontSize: 12, fontWeight: '800' },
+  memorySection: { backgroundColor: '#12120F', borderColor: '#302D24', borderRadius: 14, borderWidth: 1, gap: 7, padding: 12 },
+  memoryLabel: { color: '#FFF7DF', fontSize: 14, fontWeight: '800' },
+  optional: { color: '#AAA69C', fontWeight: '500' },
+  memoryHelper: { color: '#AAA69C', fontSize: 12, lineHeight: 17 },
+  memoryInput: { backgroundColor: '#0B0B0A', borderColor: '#3B372C', borderRadius: 10, borderWidth: 1, color: '#FFF7DF', fontSize: 14, paddingHorizontal: 11, paddingVertical: 10 },
   button: { alignItems: 'center', backgroundColor: '#F7C948', borderRadius: 999, justifyContent: 'center', minHeight: 55 },
   buttonDisabled: { opacity: 0.65 },
   buttonText: { color: '#0B0B0A', fontWeight: '800', fontSize: 17 },
@@ -201,7 +231,10 @@ const s = StyleSheet.create({
   recentCount: { backgroundColor: '#302B1B', borderRadius: 16, color: '#F7C948', fontSize: 12, fontWeight: '900', minWidth: 28, padding: 6, textAlign: 'center' },
   recentRow: { alignItems: 'center', borderTopColor: '#3B372C', borderTopWidth: 1, flexDirection: 'row', gap: 10, paddingTop: 9 },
   recentSearch: { alignItems: 'center', flex: 1, flexDirection: 'row', gap: 10 },
+  recentCopy: { flex: 1, gap: 2 },
   searchGlyph: { color: '#AAA69C', fontSize: 18 },
   recentText: { color: '#FFF7DF' },
+  memoryText: { color: '#AAA69C', fontSize: 12 },
+  mapLink: { color: '#F7C948', fontSize: 12, fontWeight: '900', padding: 5 },
   removeRecent: { color: '#FFAAA8', fontSize: 23, fontWeight: '700', lineHeight: 23, paddingHorizontal: 5 },
 });

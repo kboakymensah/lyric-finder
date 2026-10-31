@@ -15,6 +15,7 @@ import {
   type LibraryData,
 } from '../lib/library';
 import type { SongResult } from '../types/song';
+import { provideActionFeedback } from '../lib/action-feedback';
 
 const STORAGE_KEY = '@lyric-finder/library-v1';
 const LOAD_ERROR = 'Your saved library could not be loaded.';
@@ -129,6 +130,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
           ),
         };
       });
+      if (createdPlaylistId) provideActionFeedback();
     },
     [update],
   );
@@ -140,13 +142,15 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       error,
       isLiked: (songId) => data.likedSongs.some((song) => song.id === songId),
       isFavorite: (songId) => data.favoriteSongIds.includes(songId),
-      toggleSong: (song) => update((library) => toggleLikedSong(library, toSavedSong(song))),
-      toggleFavorite: (song) => update((library) => toggleFavoriteSong(library, toSavedSong(song))),
+      toggleSong: (song) => { update((library) => toggleLikedSong(library, toSavedSong(song))); provideActionFeedback(); },
+      toggleFavorite: (song) => { update((library) => toggleFavoriteSong(library, toSavedSong(song))); provideActionFeedback(); },
       create,
       removePlaylist: (playlistId) => update((library) => deletePlaylist(library, playlistId)),
       renamePlaylist: (playlistId, name) => update((library) => renamePlaylist(library, playlistId, name)),
-      addToPlaylist: (playlistId, song) =>
-        update((library) => addSongToPlaylist(library, playlistId, toSavedSong(song))),
+      addToPlaylist: (playlistId, song) => {
+        update((library) => addSongToPlaylist(library, playlistId, toSavedSong(song)));
+        provideActionFeedback();
+      },
       removeFromPlaylist: (playlistId, songId) =>
         update((library) => removeSongFromPlaylist(library, playlistId, songId)),
     }),

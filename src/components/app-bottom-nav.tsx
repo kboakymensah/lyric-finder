@@ -1,9 +1,11 @@
 import { Link, usePathname, type Href } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { DeviceEventEmitter, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { mainNavigationItems, type MainNavigationId } from '../lib/main-navigation';
 import { persistentNavigationSurfaceStyle } from '../lib/persistent-navigation';
+import { bottomNavigationEvent, type BottomNavigationVisibility } from '../lib/bottom-navigation-scroll';
 import { bottomNavigationMinimumHeight } from './music-ui';
 
 export { bottomNavigationMinimumHeight } from './music-ui';
@@ -18,6 +20,7 @@ const icons: Record<MainNavigationId, string> = {
 export function AppBottomNav() {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
+  const [visibility, setVisibility] = useState<BottomNavigationVisibility>('expanded');
   const activeId: MainNavigationId = pathname === '/'
     ? 'search'
     : pathname === '/favorites'
@@ -26,14 +29,20 @@ export function AppBottomNav() {
         ? 'playlists'
         : 'library';
 
+  useEffect(() => {
+    const subscription = DeviceEventEmitter.addListener(bottomNavigationEvent, setVisibility);
+    return () => subscription.remove();
+  }, []);
+
+  const collapsed = visibility === 'collapsed';
   return <View pointerEvents="box-none" style={[styles.surface, persistentNavigationSurfaceStyle]}>
-    <View style={[styles.bar, { minHeight: bottomNavigationMinimumHeight + insets.bottom, paddingBottom: Math.max(insets.bottom, 10) }]}>
+    <View style={[styles.bar, collapsed && styles.barCollapsed, { minHeight: (collapsed ? 40 : bottomNavigationMinimumHeight) + insets.bottom, paddingBottom: Math.max(insets.bottom, collapsed ? 4 : 10) }]}>
       {mainNavigationItems.map((item) => {
         const active = item.id === activeId;
         return <Link key={item.id} href={item.href as Href} asChild>
-          <Pressable accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected: active }} style={styles.item}>
+          <Pressable accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected: active }} style={[styles.item, collapsed && styles.itemCollapsed]}>
             <Text style={[styles.icon, active && styles.active]}>{icons[item.id]}</Text>
-            <Text numberOfLines={1} style={[styles.label, active && styles.active]}>{item.label}</Text>
+            {!collapsed && <Text numberOfLines={1} style={[styles.label, active && styles.active]}>{item.label}</Text>}
           </Pressable>
         </Link>;
       })}
@@ -44,7 +53,9 @@ export function AppBottomNav() {
 const styles = StyleSheet.create({
   surface: {},
   bar: { backgroundColor: '#11110F', borderTopColor: '#3B372C', borderTopWidth: 1, flexDirection: 'row', paddingHorizontal: 8, paddingTop: 9 },
+  barCollapsed: { paddingTop: 4 },
   item: { alignItems: 'center', flex: 1, gap: 2, minHeight: 44 },
+  itemCollapsed: { minHeight: 28 },
   icon: { color: '#A39D8E', fontSize: 23, fontWeight: '900', lineHeight: 25 },
   label: { color: '#A39D8E', fontSize: 10, fontWeight: '800' },
   active: { color: '#F7C948' },

@@ -9,6 +9,7 @@ import { useSongDetails } from '../contexts/song-details-context';
 import { screenContentBottomInset } from '../components/music-ui';
 import type { Playlist } from '../lib/library';
 import type { SavedSong } from '../types/song';
+import { useBottomNavigationScroll } from '../hooks/use-bottom-navigation-scroll';
 
 type LibraryView = 'home' | 'liked' | 'favorites' | 'playlists' | 'playlist';
 
@@ -42,6 +43,7 @@ export function LibraryScreen({ initialView = 'home' }: { initialView?: LibraryV
   const { addToPlaylist, create, data, error, isFavorite, removeFromPlaylist, removePlaylist, renamePlaylist, status, toggleFavorite } = useLibrary();
   const player = usePreviewPlayer();
   const { openSong } = useSongDetails();
+  const onScroll = useBottomNavigationScroll();
   const favorites = data.likedSongs.filter((song) => data.favoriteSongIds.includes(song.id));
   const playlist = data.playlists.find((item) => item.id === selectedPlaylistId) ?? null;
 
@@ -64,7 +66,7 @@ export function LibraryScreen({ initialView = 'home' }: { initialView?: LibraryV
   const title = view === 'liked' ? 'Liked Songs' : view === 'favorites' ? 'Favorites' : view === 'playlists' ? 'Playlists' : view === 'playlist' ? playlist?.name ?? 'Playlist' : 'My Library';
   const kicker = view === 'liked' ? 'YOUR SAVED FINDS' : view === 'favorites' ? 'SONGS YOU LOVE' : view === 'playlists' ? 'MADE FOR YOUR FINDS' : view === 'playlist' ? 'YOUR PLAYLIST' : 'YOUR COLLECTION';
 
-  return <SafeAreaView style={styles.screen}><ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+  return <SafeAreaView style={styles.screen}><ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" onScroll={onScroll} scrollEventThrottle={16}>
     <View style={styles.topRow}>{view === 'home' ? <Link href="/" style={styles.backLink}>← Search</Link> : <Pressable accessibilityRole="button" accessibilityLabel="Back to My Library" onPress={backToLibrary}><Text style={styles.backLink}>← My Library</Text></Pressable>}<Text style={styles.countBadge}>{data.likedSongs.length}</Text></View>
     <View style={styles.hero}><Text style={styles.kicker}>{kicker}</Text><Text style={styles.title}>{title}</Text>{view === 'home' && <Text style={styles.subtitle}>Your saved songs, favorites, and playlists in one place.</Text>}</View>
     {error && <Text style={styles.error}>{error}</Text>}
