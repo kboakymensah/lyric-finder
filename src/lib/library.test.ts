@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { SongResult } from '../types/song';
 import {
   addSongToPlaylist,
+  canAddSongToPlaylist,
   createPlaylist,
   deletePlaylist,
   emptyLibrary,
@@ -68,6 +69,16 @@ describe('local library operations', () => {
     expect(addSongToPlaylist(withSong, id, song).playlists[0].songs).toEqual([song]);
     expect(removeSongFromPlaylist(withSong, id, song.id).playlists[0].songs).toEqual([]);
     expect(toggleLikedSong(withSong, song)).toEqual({ likedSongs: [], favoriteSongIds: [], playlists: [{ id, name: 'Road Trip', songs: [] }] });
+  });
+
+  it('reports whether a song is newly eligible to be added to a playlist', () => {
+    const withPlaylist = createPlaylist(emptyLibrary, 'Road Trip');
+    const playlistId = withPlaylist.playlists[0].id;
+    const withSong = addSongToPlaylist(withPlaylist, playlistId, song);
+
+    expect(canAddSongToPlaylist(withPlaylist, playlistId, song.id)).toBe(true);
+    expect(canAddSongToPlaylist(withSong, playlistId, song.id)).toBe(false);
+    expect(canAddSongToPlaylist(withPlaylist, 'missing', song.id)).toBe(false);
   });
 
   it('favorites a song by liking it first, and unfavoriting keeps the liked song', () => {

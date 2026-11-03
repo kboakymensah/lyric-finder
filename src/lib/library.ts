@@ -200,6 +200,15 @@ export const addSongToPlaylist = (
   };
 };
 
+export const canAddSongToPlaylist = (
+  library: LibraryData,
+  playlistId: string,
+  songId: string,
+): boolean => {
+  const playlist = library.playlists.find((candidate) => candidate.id === playlistId);
+  return Boolean(playlist && !playlist.songs.some((song) => song.id === songId));
+};
+
 export const removeSongFromPlaylist = (
   library: LibraryData,
   playlistId: string,

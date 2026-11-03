@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 
 import {
   addSongToPlaylist,
+  canAddSongToPlaylist,
   createPlaylist,
   deletePlaylist,
   emptyLibrary,
@@ -148,8 +149,12 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       removePlaylist: (playlistId) => update((library) => deletePlaylist(library, playlistId)),
       renamePlaylist: (playlistId, name) => update((library) => renamePlaylist(library, playlistId, name)),
       addToPlaylist: (playlistId, song) => {
-        update((library) => addSongToPlaylist(library, playlistId, toSavedSong(song)));
-        provideActionFeedback();
+    const savedSong = toSavedSong(song);
+    const didAddSong = canAddSongToPlaylist(dataRef.current, playlistId, savedSong.id);
+    update((library) => addSongToPlaylist(library, playlistId, savedSong));
+    if (didAddSong) {
+      provideActionFeedback();
+    }
       },
       removeFromPlaylist: (playlistId, songId) =>
         update((library) => removeSongFromPlaylist(library, playlistId, songId)),
