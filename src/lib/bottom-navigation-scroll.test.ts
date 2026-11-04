@@ -7,6 +7,10 @@ describe('bottomNavigationVisibilityForScroll', () => {
     expect(bottomNavigationVisibilityForScroll(220, 180)).toBe('collapsed');
   });
 
+  it('collapses after gradual downward scrolling once content moves past the compact threshold', () => {
+    expect(bottomNavigationVisibilityForScroll(50, 45)).toBe('collapsed');
+  });
+
   it('expands the bar when a screen is scrolling back up', () => {
     expect(bottomNavigationVisibilityForScroll(160, 220)).toBe('expanded');
   });

@@ -5,6 +5,7 @@ import { Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } 
 import { useLibrary } from '../contexts/library-context';
 import { usePreviewPlayer } from '../contexts/preview-player-context';
 import { useSongDetails } from '../contexts/song-details-context';
+import { useBottomNavigationScroll } from '../hooks/use-bottom-navigation-scroll';
 import { lyricDetailStatus } from '../lib/song-details';
 import { screenContentBottomInset } from '../components/music-ui';
 import type { SongResult } from '../types/song';
@@ -13,6 +14,7 @@ export default function SongScreen() {
   const { song, clearSong } = useSongDetails();
   const library = useLibrary();
   const player = usePreviewPlayer();
+  const onScroll = useBottomNavigationScroll();
 
   if (!song) return <SafeAreaView style={styles.screen}><View style={styles.unavailable}><Text style={styles.unavailableTitle}>Song unavailable</Text><Text style={styles.unavailableMessage}>Return to search and choose a real song result to view its details.</Text><Pressable accessibilityRole="button" accessibilityLabel="Return to Search" onPress={() => router.replace('/')} style={styles.goldButton}><Text style={styles.goldText}>Return to Search</Text></Pressable></View></SafeAreaView>;
 
@@ -21,7 +23,7 @@ export default function SongScreen() {
   const goBack = () => { clearSong(); router.back(); };
   const openLyrics = () => { if (song.lyricsUrl) void Linking.openURL(song.lyricsUrl); };
 
-  return <SafeAreaView style={styles.screen}><ScrollView contentContainerStyle={styles.content}>
+  return <SafeAreaView style={styles.screen}><ScrollView contentContainerStyle={styles.content} onScroll={onScroll} scrollEventThrottle={16}>
     <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={goBack}><Text style={styles.back}>‹  Back</Text></Pressable>
     <View style={styles.hero}>{song.artworkUrl ? <Image source={{ uri: song.artworkUrl }} style={styles.artwork} accessibilityLabel={`${song.title} artwork`} /> : <View style={[styles.artwork, styles.artworkFallback]}><Text style={styles.note}>♫</Text></View>}<View style={styles.copy}><Text style={styles.eyebrow}>SONG DETAILS</Text><Text style={styles.title}>{song.title}</Text><Text style={styles.artist}>{song.artist}</Text></View></View>
     <View style={styles.actions}><Pressable accessibilityRole="button" accessibilityLabel="Toggle Favorite" onPress={() => library.toggleFavorite(result)} style={styles.outlineAction}><Text style={styles.actionText}>{library.isFavorite(song.id) ? '♥  Favorited' : '♡  Favorite'}</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Toggle Saved" onPress={() => library.toggleSong(result)} style={[styles.outlineAction, library.isLiked(song.id) && styles.selectedAction]}><Text style={styles.actionText}>{library.isLiked(song.id) ? '✓  Saved' : '+  Save'}</Text></Pressable></View>

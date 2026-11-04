@@ -34,6 +34,10 @@ export function AppBottomNav() {
     return () => subscription.remove();
   }, []);
 
+  useEffect(() => {
+    setVisibility('expanded');
+  }, [pathname]);
+
   const collapsed = visibility === 'collapsed';
   return <View pointerEvents="box-none" style={[styles.surface, persistentNavigationSurfaceStyle]}>
     <View style={[styles.bar, collapsed && styles.barCollapsed, { minHeight: (collapsed ? 40 : bottomNavigationMinimumHeight) + insets.bottom, paddingBottom: Math.max(insets.bottom, collapsed ? 4 : 10) }]}>
